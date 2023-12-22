@@ -2,6 +2,7 @@ from nicegui import ui
 from .widgets import fuzzy_sort_picker, fuzzy_sort_setter
 from satisfactory_tools.categorized_collection import CategorizedCollection
 import random
+from functools import partial
 import string
 
 
@@ -10,22 +11,26 @@ items = {"".join(random.choices(string.ascii_letters, k=random.randint(5, 10))):
 tag_assignments = {tag: set(random.choices(list(items.keys()), k=random.randint(4, 40))) for tag in tags}
 test_collection = CategorizedCollection(items, tag_assignments)
 
-ui.dark_mode()
+def ui_closure(ui, render):
+    return partial(render, ui)
 
-# TODO: use an optimizer class to sage the optimization state
-# TODO: use two column layout--output on the right, unless screen is too small
+def step_one(ui):
+    fuzzy_sort_setter(ui, test_collection)
+
+
 with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
     with ui.step("Target Output") as step:
         step.classes("flex-wrap")
-        fuzzy_sort_setter(ui, test_collection)
-        ui.button("Apply", on_click=stepper.next)
+        closed_step_one = ui_closure(ui, step_one)
+        closed_step_one()
+        ui.button("Apply", on_click=lambda: (step.clear(), stepper.next()))
     with ui.step("Input Constraints") as stp:
         step.classes("flex-wrap")
         fuzzy_sort_setter(ui, test_collection)
         with ui.row():
             ui.button("Skip", on_click=stepper.next)
             ui.button("Apply", on_click=stepper.next)
-            ui.button("Previous", on_click=stepper.previous)
+            ui.button("Previous", on_click=lambda: (stepper.previous(), closed_step_one()))
     with ui.step("Available Recipes") as step:
         step.classes("flex-wrap")
         fuzzy_sort_picker(ui, test_collection)

@@ -17,10 +17,12 @@ class Picker:
         self._category_counters = {key: 0 for key in self.elements.keys()}
 
     def render_category_selectors(self, ui: ui) -> None:
+        # TODO: fix sizing to labels, switch to progress button?
+        # TODO: color change on full
         for tag in self.elements.tags.keys():
-            with ui.circular_progress(max=len(list(self.elements.tag(tag).values())), show_value=False).bind_value_from(self._category_counters, tag).bind_visibility_from(self._category_visibility, tag):
-                ui.button(tag, on_click=partial(self._category_select, tag)).props("flat round").bind_visibility_from(self._category_visibility, tag)
-
+            with ui.element("div"):
+                with ui.circular_progress(max=len(list(self.elements.tag(tag).values())), show_value=False).bind_value_from(self._category_counters, tag).bind_visibility_from(self._category_visibility, tag):
+                    ui.button(tag, on_click=partial(self._category_select, tag)).props("flat round").bind_visibility_from(self._category_visibility, tag)
 
     def render_search_box(self, ui: ui) -> None:
         searchbox = ui.input(placeholder="Search...", on_change=lambda e: self._filter(e.value))
@@ -38,6 +40,8 @@ class Picker:
             switch.bind_visibility_from(self._selector_visibility, key)
 
     def _category_select(self, category: str) -> None:
+        # TODO: can category select be moved into js/quasar? this would cut the number of bindings
+        # TODO: to 3-4 per instances, rather than 100+
         visible_keys = set(self.elements.tag(category).keys()) & {k for k, v in self._selector_visibility.items() if v}
         all_selected = all(self._selected[key] for key in visible_keys)
         for value in visible_keys:
@@ -88,21 +92,24 @@ class Setter(Picker):
         super().__init__(elements)
         self._values = {key: 0 for key in self.elements.keys()}
 
+    def render_search_box(self, ui: ui) -> None:
+        def _set_keys(keys: list[str]):
+            for key in self._selected.keys():
+                self._selected[key] = key in keys
+
+        searchbox = ui.select(list(self.elements.keys()), with_input=True, multiple=True, on_change=lambda e: _set_keys(e.value)).props("use-chips")
+        # TODO: can the dropdown be formatted with headers or sub menus?
+
     def render_setters(self, ui):
         for key in self.elements.keys():
-            # FIXME: there might be an update order thing here, with a race between updating selected
-            # FIXME: and updating the category selectors. The on_change might have the value in an event,
-            # FIXME: which would obviate this issue entirely.
-            # FIXME: there's also a parallel issue, in that selecting by category will trigger the
-            # FIXME: on_change for every element in the category
             with ui.row() as row:
+                # TODO: column wrap
+                row.classes("content-center")
+                row.props("content-center")
+
                 row.bind_visibility_from(self._selected, key)
 
-                switch = ui.switch(key, on_change=partial(self._update_category_selectors, item=key))
-                switch.bind_value(self._selected, key)
-
-                input = ui.number().bind_value(self._values, key)
-                ui.slider(min=0, max=1000, value=1, step=1).bind_value(self._values, key)
+                input = ui.number(key).bind_value(self._values, key)
 
     @property
     def selected(self) -> tuple[str, int]:
@@ -116,12 +123,12 @@ def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]):
     # TODO: state flow: unselected -> selected, selected -> unselected, partially selected -> unselected
     # partial selection from filtered view, in which case you go from unselected -> partially selected, or by 
     # selecting checks manually
-    with ui.row():
+    with ui.row(wrap=True) as row:
+        row.classes("max-h-80 max-w-96")
         picker.render_category_selectors(ui)
 
-    with ui.scroll_area():
-        with ui.row():
-            picker.render_selectors(ui)
+    with ui.row(wrap=True):
+        picker.render_selectors(ui)
 
 def fuzzy_sort_setter(ui: ui, elements: CategorizedCollection[str, ...]):
     picker = Setter(elements)
@@ -130,9 +137,9 @@ def fuzzy_sort_setter(ui: ui, elements: CategorizedCollection[str, ...]):
     # with ui.row():
     #     picker.render_category_selectors(ui)
     #
-    with ui.scroll_area():
-        with ui.row():
-            picker.render_selectors(ui)
+    # with ui.row(wrap=True) as row:
+    #     row.classes("max-h-80 max-w-96")
+        # picker.render_selectors(ui)
 
     with ui.column():
         picker.render_setters(ui)
