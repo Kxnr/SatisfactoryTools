@@ -6,12 +6,14 @@ from functools import partial
 
 
 class Picker:
+    default_visibility = True
+
     def __init__(self, elements: CategorizedCollection[str, ...]):
         self.elements = elements
         self._selected = {key: False for key in self.elements.keys()}
-        self._selector_visibility = {key: True for key in self.elements.keys()}
+        self._selector_visibility = {key: self.default_visibility for key in self.elements.keys()}
 
-        self._category_visibility = {key: True for key in self.elements.keys()}
+        self._category_visibility = {key: self.default_visibility for key in self.elements.keys()}
         self._category_counters = {key: 0 for key in self.elements.keys()}
 
     def render_category_selectors(self, ui: ui) -> None:
@@ -56,10 +58,10 @@ class Picker:
     def _filter(self, search: str):
         if not search:
             for key in self._selector_visibility.keys():
-                self._selector_visibility[key] = True
+                self._selector_visibility[key] = self.default_visibility
 
             for key in self._category_visibility.keys():
-                self._category_visibility[key] = True
+                self._category_visibility[key] = self.default_visibility
 
             return
 
@@ -79,6 +81,33 @@ class Picker:
         yield from (self.elements[key] for key, value in self._selected.items() if value)
 
 
+class Setter(Picker):
+    default_visibility = False
+
+    def __init__(self, elements: CategorizedCollection[str, ...]):
+        super().__init__(elements)
+        self._values = {key: 0 for key in self.elements.keys()}
+
+    def render_setters(self, ui):
+        for key in self.elements.keys():
+            # FIXME: there might be an update order thing here, with a race between updating selected
+            # FIXME: and updating the category selectors. The on_change might have the value in an event,
+            # FIXME: which would obviate this issue entirely.
+            # FIXME: there's also a parallel issue, in that selecting by category will trigger the
+            # FIXME: on_change for every element in the category
+            with ui.row() as row:
+                row.bind_visibility_from(self._selected, key)
+
+                switch = ui.switch(key, on_change=partial(self._update_category_selectors, item=key))
+                switch.bind_value(self._selected, key)
+
+                input = ui.number().bind_value(self._values, key)
+                ui.slider(min=0, max=1000, value=1, step=1).bind_value(self._values, key)
+
+    @property
+    def selected(self) -> tuple[str, int]:
+        yield from ((self.elements[key], self._values[key]) for key, value in self._selected.items() if value)
+
 
 def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]):
     picker = Picker(elements)
@@ -87,9 +116,23 @@ def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]):
     # TODO: state flow: unselected -> selected, selected -> unselected, partially selected -> unselected
     # partial selection from filtered view, in which case you go from unselected -> partially selected, or by 
     # selecting checks manually
-    with ui.row() as grid:
+    with ui.row():
         picker.render_category_selectors(ui)
 
-    with ui.row() as grid:
-        picker.render_selectors(ui)
+    with ui.scroll_area():
+        with ui.row():
+            picker.render_selectors(ui)
 
+def fuzzy_sort_setter(ui: ui, elements: CategorizedCollection[str, ...]):
+    picker = Setter(elements)
+    picker.render_search_box(ui)
+
+    # with ui.row():
+    #     picker.render_category_selectors(ui)
+    #
+    with ui.scroll_area():
+        with ui.row():
+            picker.render_selectors(ui)
+
+    with ui.column():
+        picker.render_setters(ui)
