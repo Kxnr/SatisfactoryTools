@@ -15,6 +15,10 @@ class _SignalClass:
 class MaterialSpec(_SignalClass):
 
     @classmethod
+    def keys(cls):
+        yield from (field.name for field in fields(cls))
+
+    @classmethod
     def empty(cls) -> Self:
         return cls()
 

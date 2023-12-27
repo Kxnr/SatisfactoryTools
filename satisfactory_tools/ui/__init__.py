@@ -1,5 +1,5 @@
 from nicegui import ui
-from .widgets import fuzzy_sort_picker, fuzzy_sort_setter
+from satisfactory_tools.ui.components import Optimizer
 from satisfactory_tools.categorized_collection import CategorizedCollection
 import random
 from functools import partial
@@ -17,23 +17,23 @@ def ui_closure(ui, render):
 def step_one(ui):
     fuzzy_sort_setter(ui, test_collection)
 
+optimizer = Optimizer(materials, processes)
 
 with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
     with ui.step("Target Output") as step:
         step.classes("flex-wrap")
-        closed_step_one = ui_closure(ui, step_one)
-        closed_step_one()
-        ui.button("Apply", on_click=lambda: (step.clear(), stepper.next()))
+        optimizer.set_target_output(ui)
     with ui.step("Input Constraints") as stp:
         step.classes("flex-wrap")
-        fuzzy_sort_setter(ui, test_collection)
+        optimizer.set_input_constraints(ui)
         with ui.row():
-            ui.button("Skip", on_click=stepper.next)
+            ui.button("Skip", on_click=lambda: (stepper.next(), optimizer.clear_input_constraints()))
+            # TODO: re-set constraints if previously skipped
             ui.button("Apply", on_click=stepper.next)
-            ui.button("Previous", on_click=lambda: (stepper.previous(), closed_step_one()))
+            ui.button("Previous", on_click=stepper.previous)
     with ui.step("Available Recipes") as step:
         step.classes("flex-wrap")
-        fuzzy_sort_picker(ui, test_collection)
+        optimizer.set_machines(ui)
         with ui.row():
             ui.button("Apply", on_click=stepper.next)
             ui.button("Previous", on_click=stepper.previous)
@@ -41,8 +41,9 @@ with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
         step.classes("flex-wrap")
         with ui.row():
             # TODO: more description
-            ui.button("Maximize output")
-            ui.button("Minimize input")
+            # TODO: render optimization result
+            ui.button("Maximize output", on_click=optimizer.optimize_output())
+            ui.button("Minimize input", on_click=optimizer.optimize_input())
             ui.button("Previous", on_click=stepper.previous)
 
 ui.run()

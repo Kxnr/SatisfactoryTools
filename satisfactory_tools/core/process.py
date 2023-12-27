@@ -1,14 +1,14 @@
-from dataclasses import dataclass, fields, replace
+from dataclasses import dataclass, fields, replace, Field
 from functools import singledispatchmethod
-from typing import Any
+from typing import Any, Iterable
 
 import networkx as nx
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from scipy.optimize import linprog
 from typing_extensions import Self
 
-from core.material import MaterialSpec
+from satisfactory_tools.core.material import MaterialSpec
 
 
 def dataclass_to_list(dc):
@@ -24,12 +24,14 @@ class _SignalClass:
     """
 
 class ProcessNode(BaseModel, _SignalClass):
+    model_config = ConfigDict(frozen=True)
     name: str  # TODO: use an enum of node types, rather than names, to make plotting easier
     input_materials: MaterialSpec
     output_materials: MaterialSpec
     power_production: float
     power_consumption: float
-    internal_nodes: set[Self] = field(default=set)
+    # TODO: merge with CompositeNode
+    # internal_nodes: set[Self] = Field(default_factory=set)
     scale: float = 1
 
     @classmethod
@@ -66,7 +68,7 @@ class ProcessNode(BaseModel, _SignalClass):
 
     @__rshift__.register(_SignalClass)
     def _(self, other: Self) -> Self:
-        return CompositeProcessNode(self, other)
+        return self.from_nodes(self, other)
 
     @singledispatchmethod
     def __lshift__(self, other: Any) -> Self | MaterialSpec:
@@ -78,7 +80,7 @@ class ProcessNode(BaseModel, _SignalClass):
 
     @__lshift__.register
     def _(self, other: MaterialSpec) -> MaterialSpec:
-        scale = self.scaled_input // other
+        scale = other // self.scaled_input
         return self.scaled_output * scale
 
     @__lshift__.register(_SignalClass)
@@ -103,7 +105,7 @@ class ProcessNode(BaseModel, _SignalClass):
         """
         Scale up this recipe
         """
-        return replace(self, scale=scalar * self.scale)
+        return self.model_copy(update={"scale": scalar * self.scale})
 
     def has_input(self, material: str) -> bool:
         return getattr(self.input_materials, material) > 0
@@ -120,31 +122,6 @@ class ProcessNode(BaseModel, _SignalClass):
         return self.output_materials * self.scale
 
 
-class CompositeProcessNode(ProcessNode):
-    """
-    ProcessNode that wraps other process nodes. Does not encode specific connections between process nodes. 
-    Rather, pools resources to create a net in and out flow. This creates process pipelines rather than process
-    graphs. These are suitable for abstracting away network details for use as nodes in larger optimizations or
-    calculating material throughput, but not for optimizing network topology.
-    """
-    nodes: set[ProcessNode]
-
-    def __init__(self, *nodes: ProcessNode) -> None:
-        # TODO: make empty materials
-        empty = nodes[0].input_materials.empty()  # FIXME: why
-        sum_inputs = sum((node.input_materials for node in nodes), empty)
-        sum_outputs = sum((node.output_materials for node in nodes), empty)
-
-        net_inputs = (sum_inputs - (sum_outputs | sum_inputs)) > 0
-        net_outputs = (sum_outputs - (sum_inputs | sum_outputs)) > 0
-
-        power_production = sum(node.power_production for node in nodes)
-        power_consumption = sum(node.power_consumption for node in nodes)
-        self.nodes = set(nodes)
-
-        super().__init__(name="Composite", input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption)
-
-
 class Process(ProcessNode):
     """
     Store graph as adjacency matrix, no real value in adjacency list here because optimization runs on the full graph
@@ -155,15 +132,18 @@ class Process(ProcessNode):
 
     # TODO: save solution to Process
     """
-    graph: nx.MultiGraph
+    _graph: nx.MultiGraph
 
-    def __init__(self, nodes_or_graph: Iterable[ProcessNode] | nx.MultiGraph) -> None:
+    @classmethod
+    def from_nodes(cls, nodes_or_graph: Iterable[ProcessNode] | nx.MultiGraph) -> Self:
         if isinstance(nodes_or_graph, nx.MultiGraph):
-            self.graph = process_graph
+            _graph =nodes_or_graph
         else:
-            self.graph = self._make_graph(nodes_or_graph)
+            _graph = cls._make_graph(nodes_or_graph)
 
-        super().__init__(self.graph.nodes)
+        self = super().from_nodes(*_graph.nodes)
+        self._graph = _graph
+        return self
 
     @classmethod
     def _filter_eligible_nodes(cls, output_node: ProcessNode, available_nodes: list[ProcessNode]) -> list[ProcessNode]:
@@ -195,7 +175,7 @@ class Process(ProcessNode):
         
         # TODO: availability constraints
         """
-        output = ProcessNode("Output", target_output, target_output, 0, 0)
+        output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output, power_production=0, power_consumption=0)
 
         connected_nodes = cls._filter_eligible_nodes(output, process_nodes)
         costs = [1 for _ in connected_nodes]  # TODO: cost per recipe
@@ -219,7 +199,7 @@ class Process(ProcessNode):
 
         # TODO: remove output node from solution
         # TODO: remove source node from solution
-        return cls([node * scale for node, scale in zip(connected_nodes, solution.x) if scale >= 0])
+        return cls.from_nodes([node * scale for node, scale in zip(connected_nodes, solution.x) if scale >= 0])
 
     @classmethod
     def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False) -> Self:
@@ -230,7 +210,7 @@ class Process(ProcessNode):
         cost is modelled.
         """
         # sinks node for output, mirror to minimize input requiring source nodes for ingredients
-        output = ProcessNode("Output", target_output, target_output.empty(), 0, 0)
+        output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output.empty(), power_production=0, power_consumption=0)
 
         visited = cls._filter_eligible_nodes(output, process_nodes)
 
@@ -259,7 +239,7 @@ class Process(ProcessNode):
 
         # TODO: remove sink node from solution
         # TODO: remove source node from solution
-        return cls([node * scale for node, scale in zip(visited, solution.x) if scale >= 0])
+        return cls.from_nodes([node * scale for node, scale in zip(visited, solution.x) if scale >= 0])
 
     @classmethod
     def optimize_power(self, target_output: float, available_nodes: Iterable[ProcessNode]) -> Self:
