@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 from functools import singledispatchmethod
 from typing import Any
 
@@ -13,6 +13,10 @@ from core.material import MaterialSpec
 
 def dataclass_to_list(dc):
     return [getattr(dc, f.name) for f in fields(dc)]
+
+
+class SolutionFailedException(Exception):
+    ...
 
 class _SignalClass:
     """
@@ -43,8 +47,8 @@ class ProcessNode(BaseModel, _SignalClass):
         return cls(name="Composite", input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=set(nodes))
 
     def __repr__(self) -> str:
-        ingredients = " ".join(repr(self.input_materials).splitlines())
-        products = " ".join(repr(self.output_materials).splitlines())
+        ingredients = " ".join(repr(self.scaled_input).splitlines())
+        products = " ".join(repr(self.scaled_output).splitlines())
 
         return f"{ingredients} >> {products}"
 
@@ -57,8 +61,8 @@ class ProcessNode(BaseModel, _SignalClass):
 
     @__rshift__.register
     def _(self, other: MaterialSpec) -> MaterialSpec:
-        scale = other // self.output_materials
-        return self.input_materials * scale
+        scale = other // self.scaled_output
+        return self.scaled_input * scale
 
     @__rshift__.register(_SignalClass)
     def _(self, other: Self) -> Self:
@@ -74,8 +78,8 @@ class ProcessNode(BaseModel, _SignalClass):
 
     @__lshift__.register
     def _(self, other: MaterialSpec) -> MaterialSpec:
-        scale = self.input_materials // other
-        return self.output_materials * scale
+        scale = self.scaled_input // other
+        return self.scaled_output * scale
 
     @__lshift__.register(_SignalClass)
     def _(self, other: Self) -> Self:
@@ -93,20 +97,27 @@ class ProcessNode(BaseModel, _SignalClass):
         Solve for outputs
         other << self
         """
-        return self >> other 
+        return self >> other
 
     def __mul__(self, scalar: float) -> Self:
         """
         Scale up this recipe
         """
-        # TODO: store scale non-destructively
-        scale = self.scale * scalar
+        return replace(self, scale=scalar * self.scale)
 
     def has_input(self, material: str) -> bool:
         return getattr(self.input_materials, material) > 0
 
     def has_output(self, material: str) -> bool:
         return getattr(self.output_materials, material) > 0
+
+    @property
+    def scaled_input(self) -> MaterialSpec:
+        return self.input_materials * self.scale
+
+    @property
+    def scaled_output(self) -> MaterialSpec:
+        return self.output_materials * self.scale
 
 
 class CompositeProcessNode(ProcessNode):
@@ -146,9 +157,13 @@ class Process(ProcessNode):
     """
     graph: nx.MultiGraph
 
-    def __init__(self, process_graph: nx.MultiGraph) -> None:
-        self.graph = process_graph
-        super().__init__(process_graph.nodes)
+    def __init__(self, nodes_or_graph: Iterable[ProcessNode] | nx.MultiGraph) -> None:
+        if isinstance(nodes_or_graph, nx.MultiGraph):
+            self.graph = process_graph
+        else:
+            self.graph = self._make_graph(nodes_or_graph)
+
+        super().__init__(self.graph.nodes)
 
     @classmethod
     def _filter_eligible_nodes(cls, output_node: ProcessNode, available_nodes: list[ProcessNode]) -> list[ProcessNode]:
@@ -173,7 +188,7 @@ class Process(ProcessNode):
         return graph
 
     @classmethod
-    def minimize_input(cls, target_output: MaterialSpec, process_nodes: list[ProcessNode],include_power=False):
+    def minimize_input(cls, target_output: MaterialSpec, process_nodes: list[ProcessNode],include_power=False) -> Self:
         """
         Find the weights on process nodes that produce the desired output with the least input and
         process cost.
@@ -199,11 +214,15 @@ class Process(ProcessNode):
                            bounds=bounds,
                            A_ub=material_constraints * -1, b_ub=output_lower_bound * -1)
 
-        # temporary during testing, parse into instance of self
-        return solution
+        if not solution.success:
+            raise SolutionFailedException(solution)
+
+        # TODO: remove output node from solution
+        # TODO: remove source node from solution
+        return cls([node * scale for node, scale in zip(connected_nodes, solution.x) if scale >= 0])
 
     @classmethod
-    def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False):
+    def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False) -> Self:
         """
         Maximize production of output materials where input materials are constrained. If extractors
         are allowed, problem may be unbounded due to unlimited material supply. This may be addressed
@@ -235,5 +254,13 @@ class Process(ProcessNode):
                            A_ub=material_constraints*-1,
                            b_ub=material_consumption_upper_bound)
 
-        # temporary during testing, parse into instance of self
-        return solution
+        if not solution.success:
+            raise SolutionFailedException(solution)
+
+        # TODO: remove sink node from solution
+        # TODO: remove source node from solution
+        return cls([node * scale for node, scale in zip(visited, solution.x) if scale >= 0])
+
+    @classmethod
+    def optimize_power(self, target_output: float, available_nodes: Iterable[ProcessNode]) -> Self:
+        ...

@@ -4,6 +4,8 @@ from nicegui import ui
 from collections import Counter
 from functools import partial
 
+from typing import Iterable
+
 
 class Picker:
     default_visibility = True
@@ -85,20 +87,21 @@ class Picker:
         yield from (self.elements[key] for key, value in self._selected.items() if value)
 
 
-class Setter(Picker):
+class Setter:
     default_visibility = False
 
-    def __init__(self, elements: CategorizedCollection[str, ...]):
-        super().__init__(elements)
-        self._values = {key: 0 for key in self.elements.keys()}
+    def __init__(self, elements: Iterable[str]):
+        self.elements = elements
+        self._selected = {key: False for key in self.elements}
+        self._values = {key: 0 for key in self.elements}
 
     def render_search_box(self, ui: ui) -> None:
         def _set_keys(keys: list[str]):
             for key in self._selected.keys():
                 self._selected[key] = key in keys
 
-        searchbox = ui.select(list(self.elements.keys()), with_input=True, multiple=True, on_change=lambda e: _set_keys(e.value)).props("use-chips")
         # TODO: can the dropdown be formatted with headers or sub menus?
+        searchbox = ui.select(list(self.elements.keys()), with_input=True, multiple=True, on_change=lambda e: _set_keys(e.value)).props("use-chips")
 
     def render_setters(self, ui):
         for key in self.elements.keys():
@@ -112,11 +115,11 @@ class Setter(Picker):
                 input = ui.number(key).bind_value(self._values, key)
 
     @property
-    def selected(self) -> tuple[str, int]:
-        yield from ((self.elements[key], self._values[key]) for key, value in self._selected.items() if value)
+    def values(self) -> dict[str, int]:
+        return {key: value for key, value in self._values.items() if value}
 
 
-def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]):
+def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]) -> Picker:
     picker = Picker(elements)
     picker.render_search_box(ui)
     # TODO: categories--use badges to indicate total selected
@@ -130,16 +133,14 @@ def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]):
     with ui.row(wrap=True):
         picker.render_selectors(ui)
 
-def fuzzy_sort_setter(ui: ui, elements: CategorizedCollection[str, ...]):
+    return picker
+
+
+def fuzzy_sort_setter(ui: ui, elements: Iterable[str]) -> Setter:
     picker = Setter(elements)
     picker.render_search_box(ui)
 
-    # with ui.row():
-    #     picker.render_category_selectors(ui)
-    #
-    # with ui.row(wrap=True) as row:
-    #     row.classes("max-h-80 max-w-96")
-        # picker.render_selectors(ui)
-
     with ui.column():
         picker.render_setters(ui)
+
+    return picker
