@@ -17,12 +17,20 @@ def ui_closure(ui, render):
 def step_one(ui):
     fuzzy_sort_setter(ui, test_collection)
 
-optimizer = Optimizer(materials, processes)
+from dataclasses import make_dataclass, field
+from satisfactory_tools.core.material import MaterialSpec
+Materials = make_dataclass("Materials",
+                           [(name, float, field(default=0)) for name in items],
+                           bases=(MaterialSpec,), frozen=True)
+
+# optimizer = Optimizer(materials, processes)
+optimizer = Optimizer(Materials, test_collection)
 
 with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
     with ui.step("Target Output") as step:
         step.classes("flex-wrap")
         optimizer.set_target_output(ui)
+        ui.button("Apply", on_click=stepper.next)
     with ui.step("Input Constraints") as stp:
         step.classes("flex-wrap")
         optimizer.set_input_constraints(ui)
@@ -42,8 +50,8 @@ with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
         with ui.row():
             # TODO: more description
             # TODO: render optimization result
-            ui.button("Maximize output", on_click=optimizer.optimize_output())
-            ui.button("Minimize input", on_click=optimizer.optimize_input())
+            ui.button("Maximize output", on_click=optimizer.optimize_output)
+            ui.button("Minimize input", on_click=optimizer.optimize_input)
             ui.button("Previous", on_click=stepper.previous)
 
 ui.run()

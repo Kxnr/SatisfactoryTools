@@ -30,12 +30,11 @@ class ProcessNode(BaseModel, _SignalClass):
     output_materials: MaterialSpec
     power_production: float
     power_consumption: float
-    # TODO: merge with CompositeNode
     # internal_nodes: set[Self] = Field(default_factory=set)
     scale: float = 1
 
     @classmethod
-    def from_nodes(cls, *nodes: Self) -> Self:
+    def from_nodes(cls, *nodes: Self, name: str="Composite") -> Self:
         empty = nodes[0].input_materials.empty()  # FIXME: why
         sum_inputs = sum((node.input_materials for node in nodes), empty)
         sum_outputs = sum((node.output_materials for node in nodes), empty)
@@ -46,7 +45,9 @@ class ProcessNode(BaseModel, _SignalClass):
         power_production = sum(node.power_production for node in nodes)
         power_consumption = sum(node.power_consumption for node in nodes)
 
-        return cls(name="Composite", input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=set(nodes))
+        # TODO: track internal nodes
+
+        return cls(name=name, input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=set(nodes))
 
     def __repr__(self) -> str:
         ingredients = " ".join(repr(self.scaled_input).splitlines())

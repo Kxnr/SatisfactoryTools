@@ -101,10 +101,10 @@ class Setter:
                 self._selected[key] = key in keys
 
         # TODO: can the dropdown be formatted with headers or sub menus?
-        searchbox = ui.select(list(self.elements.keys()), with_input=True, multiple=True, on_change=lambda e: _set_keys(e.value)).props("use-chips")
+        searchbox = ui.select(self.elements, with_input=True, multiple=True, on_change=lambda e: _set_keys(e.value)).props("use-chips")
 
     def render_setters(self, ui):
-        for key in self.elements.keys():
+        for key in self.elements:
             with ui.row() as row:
                 # TODO: column wrap
                 row.classes("content-center")
