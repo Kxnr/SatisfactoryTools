@@ -22,9 +22,8 @@ class Picker:
         # TODO: fix sizing to labels, switch to progress button?
         # TODO: color change on full
         for tag in self.elements.tags.keys():
-            with ui.element("div"):
-                with ui.circular_progress(max=len(list(self.elements.tag(tag).values())), show_value=False).bind_value_from(self._category_counters, tag).bind_visibility_from(self._category_visibility, tag):
-                    ui.button(tag, on_click=partial(self._category_select, tag)).props("flat round").bind_visibility_from(self._category_visibility, tag)
+            with ui.circular_progress(max=len(list(self.elements.tag(tag).values())), show_value=False).bind_value_from(self._category_counters, tag).bind_visibility_from(self._category_visibility, tag):
+                ui.button(tag, on_click=partial(self._category_select, tag)).props("flat round").bind_visibility_from(self._category_visibility, tag)
 
     def render_search_box(self, ui: ui) -> None:
         searchbox = ui.input(placeholder="Search...", on_change=lambda e: self._filter(e.value))
@@ -122,15 +121,13 @@ class Setter:
 def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]) -> Picker:
     picker = Picker(elements)
     picker.render_search_box(ui)
-    # TODO: categories--use badges to indicate total selected
-    # TODO: state flow: unselected -> selected, selected -> unselected, partially selected -> unselected
-    # partial selection from filtered view, in which case you go from unselected -> partially selected, or by 
-    # selecting checks manually
+
     with ui.row(wrap=True) as row:
         row.classes("max-h-80 max-w-96")
         picker.render_category_selectors(ui)
 
-    with ui.row(wrap=True):
+    with ui.row(wrap=True) as row:
+        # TODO: scroll area
         picker.render_selectors(ui)
 
     return picker

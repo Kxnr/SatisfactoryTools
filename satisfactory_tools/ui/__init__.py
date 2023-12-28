@@ -26,32 +26,43 @@ Materials = make_dataclass("Materials",
 # optimizer = Optimizer(materials, processes)
 optimizer = Optimizer(Materials, test_collection)
 
-with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
-    with ui.step("Target Output") as step:
-        step.classes("flex-wrap")
-        optimizer.set_target_output(ui)
-        ui.button("Apply", on_click=stepper.next)
-    with ui.step("Input Constraints") as stp:
-        step.classes("flex-wrap")
-        optimizer.set_input_constraints(ui)
-        with ui.row():
-            ui.button("Skip", on_click=lambda: (stepper.next(), optimizer.clear_input_constraints()))
-            # TODO: re-set constraints if previously skipped
-            ui.button("Apply", on_click=stepper.next)
-            ui.button("Previous", on_click=stepper.previous)
-    with ui.step("Available Recipes") as step:
-        step.classes("flex-wrap")
-        optimizer.set_machines(ui)
-        with ui.row():
-            ui.button("Apply", on_click=stepper.next)
-            ui.button("Previous", on_click=stepper.previous)
-    with ui.step("Optimize") as step:
-        step.classes("flex-wrap")
-        with ui.row():
-            # TODO: more description
-            # TODO: render optimization result
-            ui.button("Maximize output", on_click=optimizer.optimize_output)
-            ui.button("Minimize input", on_click=optimizer.optimize_input)
-            ui.button("Previous", on_click=stepper.previous)
+column = ui.column()
+
+def render_something():
+    with column:
+        ui.label("Test Result")
+
+with ui.header(elevated=True):
+    ui.button(on_click=lambda: left_drawer.toggle(), icon="menu")
+    ui.label("Satisfactory Planner")
+    with ui.left_drawer(fixed=False) as left_drawer:
+        with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
+            with ui.step("Target Output") as step:
+                step.classes("flex-wrap")
+                optimizer.set_target_output(ui)
+                ui.button("Apply", on_click=stepper.next)
+            with ui.step("Input Constraints") as stp:
+                step.classes("flex-wrap")
+                optimizer.set_input_constraints(ui)
+                with ui.row():
+                    ui.button("Skip", on_click=lambda: (stepper.next(), optimizer.clear_input_constraints()))
+                    # TODO: re-set constraints if previously skipped
+                    ui.button("Apply", on_click=stepper.next)
+                    ui.button("Previous", on_click=stepper.previous)
+            with ui.step("Available Recipes") as step:
+                step.classes("flex-wrap")
+                optimizer.set_machines(ui)
+                with ui.row():
+                    ui.button("Apply", on_click=stepper.next)
+                    ui.button("Previous", on_click=stepper.previous)
+            with ui.step("Optimize") as step:
+                step.classes("flex-wrap")
+                with ui.row():
+                    # TODO: more description
+                    # TODO: render optimization result
+                    ui.button("Maximize output", on_click=render_something)
+                    ui.button("Minimize input", on_click=render_something)
+                    ui.button("Previous", on_click=stepper.previous)
+
 
 ui.run()
