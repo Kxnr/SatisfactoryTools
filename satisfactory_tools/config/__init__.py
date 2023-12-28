@@ -46,21 +46,10 @@ def parse_config(config_path: str, encoding="utf-16"):
     return Config(materials=materials, recipes=recipes)
 
 
-def _make_recipe_data(recipes: CategorizedCollection, machines: dict) -> CategorizedCollection:
-    """
-    expects recipes to be tagged with the machine keys that they can be constructed by.
-    """
-    recipe_data = CategorizedCollection()
-     # TODO: there are some shortcomings with this CategorizedCollection and managing tags
-
-    for machine_name, machine_type in machines.items():
-        for recipe_name, recipe in recipes.tag(machine_name).items():
-            recipe_data[recipe_name] = RecipeData(machine=machine_type, recipe=recipe)
-            for tag in recipes.value_tags(recipe_name):
-                recipe_data.set_tag(recipe_name, tag)
-
-    return recipe_data
+def _sythesize_recipes_and_machines(machines: Machines, recipes: list[RecipeData]) -> CategorizedCollection[str, ProcessNode]:
+    pass
 
 
-def _make_process_node(recipe: RecipeData, machines: list[MachineData]):
-    ...
+def _tag_recipe_node():
+    pass
+
