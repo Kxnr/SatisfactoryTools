@@ -46,7 +46,7 @@ class ExtractorData(MachineData):
 
 @dataclass
 class GeneratorData(MachineData):
-    fuel_resource_class: str 
+    fuel_resource_class: str
     fuel_load: float
 
     supplemental_resource: str

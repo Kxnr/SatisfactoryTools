@@ -19,19 +19,20 @@ def dataclass_to_list(dc):
 class SolutionFailedException(Exception):
     ...
 
-class _SignalClass:
+class _SignalClass(BaseModel):
     """
     Used for single dispatch on Self type
     """
 
-class ProcessNode(BaseModel, _SignalClass):
+class ProcessNode(_SignalClass):
     model_config = ConfigDict(frozen=True)
     name: str  # TODO: use an enum of node types, rather than names, to make plotting easier
     input_materials: MaterialSpec
     output_materials: MaterialSpec
     power_production: float
     power_consumption: float
-    internal_nodes: set[Self] = Field(default_factory=set)
+    # internal_nodes: set[Self] = Field(default_factory=set)
+    internal_nodes: set["ProcessNode"] = Field(default_factory=set)
     scale: float = 1
 
     @classmethod
@@ -123,6 +124,7 @@ class ProcessNode(BaseModel, _SignalClass):
     def scaled_output(self) -> MaterialSpec:
         return self.output_materials * self.scale
 
+ProcessNode.update_forward_refs()
 
 class Process(ProcessNode):
     """
