@@ -45,16 +45,18 @@ class ExtractorData(MachineData):
     items_per_cycle: float
 
 @dataclass
+class FuelManifest:
+    fuel: str
+    byproduct: str | None = None
+    supplemental: str | None = None
+
+    fuel_load: float = 0
+    byproduct_load: float = 0
+    supplemental_load: float = 0
+
+@dataclass
 class GeneratorData(MachineData):
-    fuel_resource_class: str
-    fuel_load: float
-
-    supplemental_resource: str
-    supplement_load: float
-
-    byproduct: str
-    byproduct_amount: float
-
+    fuels: list[FuelManifest]
 
 @dataclass
 class Machines:
@@ -67,6 +69,7 @@ def parse_machines(simple_config: dict[str, ...]) -> Machines:
     producers = [_parse_normal_machine(config) for config in _values_for_key_list(simple_config, BUILDABLE_KEYS)]
     extractors = [_parse_extractor(config) for config in _values_for_key_list(simple_config, EXTRACTOR_KEYS)]
     generators = [_parse_generator(config) for config in _values_for_key_list(simple_config, GENERATOR_KEYS)]
+    generators = [g for g in generators if g is not None]
 
     return Machines(producers=producers, extractors=extractors, generators=generators)
 
@@ -107,24 +110,26 @@ def _parse_extractor(extractor_config: dict[str, ...]) -> ExtractorData:
 
 def _parse_generator(generator_config: dict[str, ...]) -> GeneratorData:
     # TODO: this is a class of fuels, rather than a fuel itself
-    fuel_class = generator_config["mFuelClass"]
+    if "mFuel" not in generator_config:
+        breakpoint()
+        return None
 
-    supplemental_resource = generator_config["mSupplementalResourceClass"]
-    supplemental_amount = float(generator_config["mSupplementalLoadAmount"])
+    fuels = [
+        FuelManifest(
+            fuel=fuel_config["mFuelClass"],
+            byproduct=fuel_config["mByproduct"] or None,
+            supplemental=fuel_config["mSupplementalResourceClass"] or None,
 
-    by_product = generator_config["mByproduct"]
-    by_product_amount = generator_config["mByproductAmount"]
-
-    fuel_load = float(generator_config["mFuelLoadAmount"])
+            fuel_load=float(generator_config["mFuelLoadAmount"] or 0),
+            byproduct_load=float(fuel_config["mByproductAmount"] or 0),
+            supplemental_load=float(generator_config["mSupplementalLoadAmount"] or 0)
+        )
+        for fuel_config in generator_config["mFuel"]
+    ]
 
     base_config = _parse_normal_machine(generator_config)
 
     return GeneratorData(
-        fuel_resource_class=fuel_class,
-        fuel_load = fuel_load,
-        supplemental_resource=supplemental_resource,
-        supplement_load=supplemental_amount,
-        byproduct= by_product,
-        byproduct_amount = by_product_amount,
+        fuels=fuels,
         **asdict(base_config)
     )

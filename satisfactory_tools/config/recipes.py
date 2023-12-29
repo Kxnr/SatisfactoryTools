@@ -29,7 +29,10 @@ def parse_recipes(simple_config: dict[str, ...]) -> list[RecipeData]:
         products = {name: float(amt) for name, amt in re.findall(ingredients_pattern, config["mProduct"])}
 
         duration = float(config["mManufactoringDuration"]) / 60  # seconds to minutes
-        machines = set(get_class_name(machine) for machine in config["mProducedIn"].strip("()").split(","))
+        if not config["mProducedIn"]:
+            machines = set()
+        else:
+            machines = set(get_class_name(machine) for machine in config["mProducedIn"].strip("()").split(","))
 
         recipes.append(RecipeData(
             display_name=config["mDisplayName"],
