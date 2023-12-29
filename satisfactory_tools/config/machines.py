@@ -3,7 +3,7 @@ import re
 from dataclasses import asdict, dataclass
 from typing import Iterable
 
-from config_parsing.standardization import (
+from satisfactory_tools.config.standardization import (
     CYCLES_PER_MINUTE,
     ConfigData,
     get_class_name,

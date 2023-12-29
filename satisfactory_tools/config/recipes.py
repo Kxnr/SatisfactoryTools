@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-from config_parsing.standardization import ConfigData, get_class_name
+from satisfactory_tools.config.standardization import ConfigData, get_class_name
 
 RECIPE_KEY = "FGRecipe"
 

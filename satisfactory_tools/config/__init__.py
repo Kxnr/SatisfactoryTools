@@ -2,12 +2,12 @@ import json
 import re
 from dataclasses import dataclass, make_dataclass, field
 
-from categorized_collection import CategorizedCollection
-from config_parsing.machines import MachineData, parse_machines
-from config_parsing.materials import parse_materials
-from config_parsing.recipes import RecipeData, parse_recipes
-from core.material import MaterialSpec
-from core.process import ProcessNode
+from satisfactory_tools.categorized_collection import CategorizedCollection
+from satisfactory_tools.config.machines import MachineData, parse_machines, Machines
+from satisfactory_tools.config.materials import parse_materials
+from satisfactory_tools.config.recipes import RecipeData, parse_recipes
+from satisfactory_tools.core.material import MaterialSpec
+from satisfactory_tools.core.process import ProcessNode
 
 
 def simplify_config(game_config: list[dict[..., ...]]) -> dict[str, ...]:
