@@ -6,6 +6,7 @@ from satisfactory_tools.categorized_collection import CategorizedCollection
 from satisfactory_tools.config.machines import MachineData, parse_machines, Machines
 from satisfactory_tools.config.materials import parse_materials
 from satisfactory_tools.config.recipes import RecipeData, parse_recipes
+from satisfactory_tools.config.standardization import standardize
 from satisfactory_tools.core.material import MaterialSpec
 from satisfactory_tools.core.process import ProcessNode
 
@@ -35,16 +36,20 @@ def parse_config(config_path: str, encoding="utf-16"):
     with open(config_path, "r", encoding=encoding) as f:
         config_data = simplify_config(json.loads(f.read()))
         materials = parse_materials(config_data)
-        machines = parse_machines(config_data)
-        recipes = parse_recipes(config_data)
+
+        material_translation = {material.class_name: standardize(material.display_name) for material in materials}
+        machines = parse_machines(config_data, material_translation)
+        recipes = parse_recipes(config_data, material_translation)
         # TODO: saved recipes
 
         # TODO: pydantic class to have aliases
+        # TODO: standardize materials when parsing, rather than config construction
         materials = make_dataclass("Materials",
-                                   [(material.display_name, float, field(default=0)) for material in materials],
+                                   # TODO: use a dict type to support arbitrary keys, rather than a dataclass
+                                   [(standardize(material.display_name), float, field(default=0)) for material in materials],
                                    bases=(MaterialSpec,), frozen=True)
 
-        process_nodes = _sythesize_recipes_and_machines(machines, recipes, materials)
+        process_nodes = _sythesize_recipes_and_machines(machines, recipes, materials, material_translation)
 
     return Config(materials=materials, recipes=process_nodes)
 
@@ -56,7 +61,11 @@ def _sythesize_recipes_and_machines(machines: Machines, recipes: list[RecipeData
 
     for recipe in recipes:
         for machine_class in recipe.machines:
-            machine = machines_dict[machine_class]
+            machine = machines_dict.get(machine_class)
+
+            if machine is None:
+                continue
+
             result[recipe.class_name] = ProcessNode(name=recipe.display_name,
                                                     input_materials=materials(**recipe.inputs),
                                                     output_materials=materials(**recipe.outputs),
