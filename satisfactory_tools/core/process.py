@@ -32,7 +32,7 @@ class ProcessNode(_SignalClass):
     power_production: float
     power_consumption: float
     # internal_nodes: set[Self] = Field(default_factory=set)
-    internal_nodes: set["ProcessNode"] = Field(default_factory=set)
+    internal_nodes: frozenset["ProcessNode"] = Field(default_factory=frozenset)
     scale: float = 1
 
     @classmethod
@@ -47,9 +47,7 @@ class ProcessNode(_SignalClass):
         power_production = sum(node.power_production for node in nodes)
         power_consumption = sum(node.power_consumption for node in nodes)
 
-        # TODO: track internal nodes
-
-        return cls(name=name, input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=set(nodes))
+        return cls(name=name, input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=frozenset(nodes))
 
     def __repr__(self) -> str:
         ingredients = " ".join(repr(self.scaled_input).splitlines())
