@@ -3,9 +3,8 @@ from process import Process
 
 
 def total_power(process: Process):
-    return sum(p.scale * p.process_root.power_consumption
-               for p in filter(lambda p: p.scale > 0,
-                               process.process_registry.values()))
+    return sum(node.scale * node.power_consumption
+               for node in process.graph.nodes())
 
 
 def summarize_materials(materials: MaterialSpec):

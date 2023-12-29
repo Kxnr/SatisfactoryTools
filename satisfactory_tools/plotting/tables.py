@@ -24,13 +24,12 @@ def make_table(headers: list[str], values: list[list[str]]):
 def recipe_summary(process: Process):
     headers = ["Machine Type", "Count", "Recipe", "Ingredients", "Products"]
     rows = []
-    for process in process.process_registry.values():
-        if process.scale > 0:
-            rows.append([process.process_root.__class__.__name__,
-                         process.scale,
-                         process.process_root.recipe.name,
-                         "<br>".join([f"{name}: {value * process.scale:.2f}" for name, value in process.process_root.recipe.ingredients if value > 0]),
-                         "<br>".join([f"{name}: {value * process.scale:.2f}" for name, value in process.process_root.recipe.products if value > 0]),
+    for node in process.graph.nodes:
+        rows.append([node.name,
+                     node.scale,
+                     node.name,
+                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.input_materials]),
+                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.output_materials]),
                          ])
 
     # transpose row to column major order

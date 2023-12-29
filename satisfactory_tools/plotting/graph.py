@@ -1,40 +1,45 @@
 import itertools
 import math
 from textwrap import dedent
+from more_itertools import bucket
 
 import plotly.graph_objects as go
 from igraph import Graph
-from process import Process
+
+from satisfactory_tools.core.process import Process, ProcessNode
 
 
-def make_hover_label(process: Process):
+def make_hover_label(process: ProcessNode):
     return dedent(f"""
-    {process.process_root.__class__.__name__}<br>
-    Recipe: {process.process_root.recipe.name}<br>
+    {name}<br>
+    Recipe: TODO<br>
     Scale: {process.scale}
     """)
 
 
 def plot_process(process: Process, layout=Graph.layout_auto):
-    ordered_vertices = [m for m in process.process_registry.values() if m.scale > 0]
-    n_vertices = len(ordered_vertices)
+    edges_x = []
+    edges_y = []
 
-    edges = [(ordered_vertices.index(process.process_registry[other]), ordered_vertices.index(self)) for self in ordered_vertices for other in self.process_root.input_producers if process.process_registry[other] in ordered_vertices]
+    for edge in process.graph.edges():
+        x0, y0 = process.graph.nodes[edge[0]]["pos"]
+        edges_x.append(x0)
+        edges_y.append(y0)
 
-    G = Graph(n_vertices, edges)
-    layout = G.layout(layout)
-    Xn, Yn = list(zip(*layout))
-    edge_coords = itertools.chain.from_iterable([[(Xn[n], Yn[n]) for n in e] + [(None, None)] for e in edges])
-    Xe, Ye = list(zip(*edge_coords))
 
-    max_scale = max(n.scale for n in ordered_vertices)
+        x1, y1 = process.graph.nodes[edge[1]]["pos"]
+        edges_x.append(x1)
+        edges_y.append(y1)
+
+
+    max_scale = max(n.scale for n in process.internal_nodes)
     point_scale = 20
-    point_sizes = [(math.tanh(n.scale  / max_scale) + 1) * point_scale for n in ordered_vertices]
+    point_sizes = [(math.tanh(n.scale  / max_scale) + 1) * point_scale for n in process.internal_nodes]
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=Xe,
-        y=Ye,
+        x=edges_x,
+        y=edges_y,
         mode='lines+markers',
         hoverinfo='none',
         line_shape='spline',
@@ -50,16 +55,12 @@ def plot_process(process: Process, layout=Graph.layout_auto):
 
     )
 
-    machine_types = set(type(m) for m in process.process_registry.values())
-
     # TODO: add one trace per category
-    for machine_type in machine_types:
-        # TODO: looping over all of them every time is pretty rough
-        indices = [i for i, m in process.process_registry.values() if isinstance(m, machine_type)]
-        X = [Xn[i] for i in indices]
-        Y = [Yn[i] for i in indices]
-        fig.add_trace(go.Scatter(x=X,
-                             y=Y,
+    for name, nodes in bucket(process.internal_nodes, lambda x: x.name):
+        points = [node["pos"] for node in nodes]
+        x, y = zip(*points)
+        fig.add_trace(go.Scatter(x=x,
+                             y=y,
                              mode='markers',
                              marker=dict(symbol='circle-dot',
                                          size=point_sizes,

@@ -1,10 +1,10 @@
-from dataclasses import dataclass, fields, replace, Field
+from dataclasses import dataclass, fields, replace
 from functools import singledispatchmethod
 from typing import Any, Iterable
 
 import networkx as nx
 import numpy as np
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from scipy.optimize import linprog
 from typing_extensions import Self
 
@@ -12,6 +12,7 @@ from satisfactory_tools.core.material import MaterialSpec
 
 
 def dataclass_to_list(dc):
+    # TODO: deprecated, now that we're using pydantic
     return [getattr(dc, f.name) for f in fields(dc)]
 
 
@@ -30,7 +31,7 @@ class ProcessNode(BaseModel, _SignalClass):
     output_materials: MaterialSpec
     power_production: float
     power_consumption: float
-    # internal_nodes: set[Self] = Field(default_factory=set)
+    internal_nodes: set[Self] = Field(default_factory=set)
     scale: float = 1
 
     @classmethod
