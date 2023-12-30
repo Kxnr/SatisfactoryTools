@@ -12,7 +12,8 @@ RESOURCE_KEYS = ("FGItemDescriptor",
                  "FGAmmoTypeProjectile",
                  "FGItemDescriptorNuclearFuel",
                  "FGAmmoTypeInstantHit",
-                 "FGAmmoTypeSpreadshot")
+                 "FGAmmoTypeSpreadshot",
+                 )
 
 
 class MaterialType(Enum):

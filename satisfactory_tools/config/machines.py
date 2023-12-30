@@ -113,18 +113,24 @@ def _parse_generator(generator_config: dict[str, ...], material_translations: di
     if "mFuel" not in generator_config:
         return None
 
-    fuels = [
-        FuelManifest(
-            fuel=material_translations[fuel_config["mFuelClass"]],
-            byproduct=material_translations.get(fuel_config["mByproduct"]),
-            supplemental=material_translations.get(fuel_config["mSupplementalResourceClass"]),
+    try:
+        fuels = [
+            FuelManifest(
+                fuel=material_translations[fuel_config["mFuelClass"]],
+                byproduct=material_translations.get(fuel_config["mByproduct"]),
+                supplemental=material_translations.get(fuel_config["mSupplementalResourceClass"]),
 
-            fuel_load=float(generator_config["mFuelLoadAmount"] or 0),
-            byproduct_load=float(fuel_config["mByproductAmount"] or 0),
-            supplemental_load=float(generator_config["mSupplementalLoadAmount"] or 0)
-        )
-        for fuel_config in generator_config["mFuel"]
-    ]
+                fuel_load=float(generator_config["mFuelLoadAmount"] or 0),
+                byproduct_load=float(fuel_config["mByproductAmount"] or 0),
+                supplemental_load=float(generator_config["mSupplementalLoadAmount"] or 0)
+            )
+            for fuel_config in generator_config["mFuel"]
+        ]
+    except KeyError:
+        # workaround for biomass burner, for the minute. biomass burner uses the Base Class/Category,
+        # FGItemDescriptorBiomass, rather than the item names like all of the other instances. Need
+        # to explode the category into resources for this to work properly
+        return None
 
     base_config = _parse_normal_machine(generator_config, material_translations)
 

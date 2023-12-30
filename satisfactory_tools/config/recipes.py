@@ -25,8 +25,13 @@ def parse_recipes(simple_config: dict[str, ...], material_translation: dict[str,
     for config in simple_config[RECIPE_KEY].values():
         recipe_name = config["mDisplayName"]
 
-        ingredients = {material_translation[name]: float(amt) for name, amt in re.findall(ingredients_pattern, config["mIngredients"])}
-        products = {material_translation[name]: float(amt) for name, amt in re.findall(ingredients_pattern, config["mProduct"])}
+        try:
+            ingredients = {material_translation[name]: float(amt) for name, amt in re.findall(ingredients_pattern, config["mIngredients"])}
+            products = {material_translation[name]: float(amt) for name, amt in re.findall(ingredients_pattern, config["mProduct"])}
+        except:
+            # FIXME: workaround for recipes that don't produce materials, like the blueprint
+            # FIXME: recipe
+            continue
 
         duration = float(config["mManufactoringDuration"]) / 60  # seconds to minutes
         if not config["mProducedIn"]:

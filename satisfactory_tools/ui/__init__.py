@@ -5,26 +5,17 @@ import random
 from functools import partial
 import string
 
+from satisfactory_tools.config import parse_config
 
-tags = ["".join(random.choices(string.ascii_letters, k=random.randint(5, 10))) for _ in range(15)]
-items = {"".join(random.choices(string.ascii_letters, k=random.randint(5, 10))): i for i in range(200)}
-tag_assignments = {tag: set(random.choices(list(items.keys()), k=random.randint(4, 40))) for tag in tags}
-test_collection = CategorizedCollection(items, tag_assignments)
+config = parse_config("./Docs.json")
 
-def ui_closure(ui, render):
-    return partial(render, ui)
-
-def step_one(ui):
-    fuzzy_sort_setter(ui, test_collection)
-
-from dataclasses import make_dataclass, field
-from satisfactory_tools.core.material import MaterialSpec
-Materials = make_dataclass("Materials",
-                           [(name, float, field(default=0)) for name in items],
-                           bases=(MaterialSpec,), frozen=True)
+# tags = ["".join(random.choices(string.ascii_letters, k=random.randint(5, 10))) for _ in range(15)]
+# items = {"".join(random.choices(string.ascii_letters, k=random.randint(5, 10))): i for i in range(200)}
+# tag_assignments = {tag: set(random.choices(list(items.keys()), k=random.randint(4, 40))) for tag in tags}
+# test_collection = CategorizedCollection(items, tag_assignments)
 
 # optimizer = Optimizer(materials, processes)
-optimizer = Optimizer(Materials, test_collection)
+optimizer = Optimizer(config.materials, config.recipes)
 
 column = ui.column()
 

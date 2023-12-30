@@ -49,7 +49,7 @@ def parse_config(config_path: str, encoding="utf-16"):
                                    [(standardize(material.display_name), float, field(default=0)) for material in materials],
                                    bases=(MaterialSpec,), frozen=True)
 
-        process_nodes = _sythesize_recipes_and_machines(machines, recipes, materials, material_translation)
+        process_nodes = _sythesize_recipes_and_machines(machines, recipes, materials)
 
     return Config(materials=materials, recipes=process_nodes)
 
@@ -77,7 +77,7 @@ def _sythesize_recipes_and_machines(machines: Machines, recipes: list[RecipeData
         # TODO: cycle time
             result[extractor.class_name] = ProcessNode(name=extractor.display_name,
                                                        input_materials=materials.empty(),
-                                                       output_materials=materials(**{resource: extrator.items_per_cycle}),
+                                                       output_materials=materials(**{resource: extractor.items_per_cycle}),
                                                        power_production=extractor.power_production,
                                                        power_consumption=extractor.power_consumption)
 
