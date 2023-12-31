@@ -7,7 +7,7 @@ from satisfactory_tools.config.machines import MachineData, parse_machines, Mach
 from satisfactory_tools.config.materials import parse_materials
 from satisfactory_tools.config.recipes import RecipeData, parse_recipes
 from satisfactory_tools.config.standardization import standardize
-from satisfactory_tools.core.material import MaterialSpec
+from satisfactory_tools.core.material import MaterialSpec, MaterialSpecFactory
 from satisfactory_tools.core.process import ProcessNode
 
 
@@ -25,6 +25,7 @@ def simplify_config(game_config: list[dict[..., ...]]) -> dict[str, ...]:
 
     return simple_config
 
+NAME = __name__
 
 @dataclass
 class Config:
@@ -44,10 +45,7 @@ def parse_config(config_path: str, encoding="utf-16"):
 
         # TODO: pydantic class to have aliases
         # TODO: standardize materials when parsing, rather than config construction
-        materials = make_dataclass("Materials",
-                                   # TODO: use a dict type to support arbitrary keys, rather than a dataclass
-                                   [(standardize(material.display_name), float, field(default=0)) for material in materials],
-                                   bases=(MaterialSpec,), frozen=True)
+        materials = MaterialSpecFactory(**{standardize(material.display_name): 0 for material in materials})
 
         process_nodes = _sythesize_recipes_and_machines(machines, recipes, materials)
 

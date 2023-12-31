@@ -12,7 +12,7 @@ class Picker:
 
     def __init__(self, elements: CategorizedCollection[str, ...]):
         self.elements = elements
-        self._selected = {key: False for key in self.elements.keys()}
+        self._selected = {key: True for key in self.elements.keys()}
         self._selector_visibility = {key: self.default_visibility for key in self.elements.keys()}
 
         self._category_visibility = {key: self.default_visibility for key in self.elements.keys()}

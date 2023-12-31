@@ -1,7 +1,9 @@
 from dataclasses import dataclass, fields
 from functools import singledispatchmethod
 from numbers import Number
-from typing import Any
+from typing import Any, Mapping
+from collections import defaultdict
+from pydantic import BaseModel, Field, RootModel
 
 from typing_extensions import Self
 
@@ -11,12 +13,46 @@ class _SignalClass:
     Used for single dispatch on Self type
     """
 
-@dataclass(frozen=True)
-class MaterialSpec(_SignalClass):
 
-    @classmethod
-    def keys(cls):
-        yield from (field.name for field in fields(cls))
+class HashableDict(RootModel):
+    root: dict[str, float]
+
+    def __init__(self, **kwargs):
+        return super().__init__(kwargs)
+
+    def __hash__(self) -> str:
+        return hash(frozenset(self.root.items()))
+
+    def items(self):
+        yield from self.root.items()
+
+    def keys(self):
+        yield from self.root.keys()
+
+    def values(self):
+        yield from self.root.values()
+
+    def __getitem__(self, name: str):
+        return self.root[name]
+
+
+class MaterialSpecFactory:
+    def __init__(self, **kwargs):
+        self.initial_values = kwargs
+
+    def __call__(self, **kwargs):
+        return MaterialSpec(material_values=HashableDict(**(self.initial_values | kwargs)))
+
+    def empty(self) -> Self:
+        return self()
+
+    def keys(self):
+        yield from self.initial_values.keys()
+
+
+
+class MaterialSpec(BaseModel, _SignalClass, frozen=True):
+    material_values: HashableDict = Field(default_factory=HashableDict)
 
     @classmethod
     def empty(cls) -> Self:
@@ -68,7 +104,7 @@ class MaterialSpec(_SignalClass):
 
         result = {}
         for name, value in self:
-            result[name] = value + getattr(other, name)
+            result[name] = value + other[name]
         return type(self)(**result)
 
     def __sub__(self, other: Self | Any) -> Self:
@@ -77,7 +113,7 @@ class MaterialSpec(_SignalClass):
 
         result = {}
         for name, value in self:
-            result[name] = value - getattr(other, name)
+            result[name] = value - other[name] 
         return type(self)(**result)
 
     def __mul__(self, scalar: Number) -> Self:
@@ -106,7 +142,7 @@ class MaterialSpec(_SignalClass):
         if all(value == 0 for _, value in other):
             raise ZeroDivisionError("Cannot divide by empty MaterialSpec.")
 
-        return min(getattr(self, name) / value for name, value in other if value > 0)
+        return min(self.material_values[name] / value for name, value in other if value > 0)
 
     @singledispatchmethod
     def __floordiv__(self, other: Any) -> int | Self:
@@ -117,7 +153,7 @@ class MaterialSpec(_SignalClass):
         if all(value == 0 for _, value in other):
             raise ZeroDivisionError("Cannot divide by empty MaterialSpec.")
 
-        return min(getattr(self, name) // value for name, value in other if value > 0)
+        return min(self.material_values[name] // value for name, value in other if value > 0)
 
     @__floordiv__.register
     def _(self, other: Number) -> Self:
@@ -127,8 +163,10 @@ class MaterialSpec(_SignalClass):
         return type(self)(**result)
 
     def __iter__(self):
-        for f in fields(self):
-            yield f.name, getattr(self, f.name)
+        yield from self.material_values.items()
+
+    def values(self):
+        yield from self.material_values.values()
 
     def __or__(self, other: Self) -> Self:
         if not isinstance(other, MaterialSpec):
@@ -138,7 +176,7 @@ class MaterialSpec(_SignalClass):
             **{name: value for (name, value), (_, matched_value) in zip(self, other) if matched_value > 0})
 
     def __getitem__(self, item: str) -> Number:
-        return getattr(self, item)
+        return self.material_values[item]
 
     def __repr__(self) -> str:
         return "\n".join(f"{name}: {value}" for name, value in self if value > 0)

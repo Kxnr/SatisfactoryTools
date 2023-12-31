@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import ui, run
 from satisfactory_tools.ui.components import Optimizer
 from satisfactory_tools.categorized_collection import CategorizedCollection
 import random
@@ -23,17 +23,24 @@ def render_something():
     with column:
         ui.label("Test Result")
 
+async def optimize(func):
+    print("optimizing")
+    with column:
+        ui.label("result:")
+        result = await run.cpu_bound(func)
+    ui.label(repr(result))
+    print("optimized")
+    
 with ui.header(elevated=True):
     ui.button(on_click=lambda: left_drawer.toggle(), icon="menu")
     ui.label("Satisfactory Planner")
     with ui.left_drawer(fixed=False) as left_drawer:
-        with ui.stepper().props("vertical").classes("w-full flex-wrap") as stepper:
+        left_drawer.props("width=500")
+        with ui.stepper().props("vertical") as stepper:
             with ui.step("Target Output") as step:
-                step.classes("flex-wrap")
                 optimizer.set_target_output(ui)
                 ui.button("Apply", on_click=stepper.next)
             with ui.step("Input Constraints") as stp:
-                step.classes("flex-wrap")
                 optimizer.set_input_constraints(ui)
                 with ui.row():
                     ui.button("Skip", on_click=lambda: (stepper.next(), optimizer.clear_input_constraints()))
@@ -41,18 +48,16 @@ with ui.header(elevated=True):
                     ui.button("Apply", on_click=stepper.next)
                     ui.button("Previous", on_click=stepper.previous)
             with ui.step("Available Recipes") as step:
-                step.classes("flex-wrap")
                 optimizer.set_machines(ui)
                 with ui.row():
                     ui.button("Apply", on_click=stepper.next)
                     ui.button("Previous", on_click=stepper.previous)
             with ui.step("Optimize") as step:
-                step.classes("flex-wrap")
                 with ui.row():
                     # TODO: more description
                     # TODO: render optimization result
-                    ui.button("Maximize output", on_click=render_something)
-                    ui.button("Minimize input", on_click=render_something)
+                    ui.button("Maximize output", on_click=partial(optimize, optimizer.optimize_output))
+                    ui.button("Minimize input", on_click=partial(optimize, optimizer.optimize_input))
                     ui.button("Previous", on_click=stepper.previous)
 
 
