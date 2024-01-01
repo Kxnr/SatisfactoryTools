@@ -123,11 +123,11 @@ def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]) -> Pick
     picker.render_search_box(ui)
 
     with ui.row(wrap=True) as row:
-        row.classes("max-h-80 max-w-96")
+        row.classes("max-h-80 max-w-96 overflow-scroll")
         picker.render_category_selectors(ui)
 
     with ui.row(wrap=True) as row:
-        # TODO: scroll area
+        row.classes("max-h-80 max-w-96 overflow-scroll")
         picker.render_selectors(ui)
 
     return picker
