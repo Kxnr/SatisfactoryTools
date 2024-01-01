@@ -17,7 +17,7 @@ class RecipeData(ConfigData):
     # TODO: power modifiers
 
 
-def parse_recipes(simple_config: dict[str, ...], material_translation: dict[str, str]) -> list[RecipeData]:
+def parse_recipes(simple_config: dict[str, ...]) -> list[RecipeData]:
     resource_capture_group = r".*\.(\w+).*?"
     ingredients_pattern = rf"\(ItemClass={resource_capture_group},Amount=(\d+)\)"
     recipes = []
@@ -25,13 +25,8 @@ def parse_recipes(simple_config: dict[str, ...], material_translation: dict[str,
     for config in simple_config[RECIPE_KEY].values():
         recipe_name = config["mDisplayName"]
 
-        try:
-            ingredients = {material_translation[name]: float(amt) for name, amt in re.findall(ingredients_pattern, config["mIngredients"])}
-            products = {material_translation[name]: float(amt) for name, amt in re.findall(ingredients_pattern, config["mProduct"])}
-        except:
-            # FIXME: workaround for recipes that don't produce materials, like the blueprint
-            # FIXME: recipe
-            continue
+        ingredients = {name: float(amt) for name, amt in re.findall(ingredients_pattern, config["mIngredients"])}
+        products = {name: float(amt) for name, amt in re.findall(ingredients_pattern, config["mProduct"])}
 
         duration = float(config["mManufactoringDuration"]) / 60  # seconds to minutes
         if not config["mProducedIn"]:

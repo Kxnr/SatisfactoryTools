@@ -28,10 +28,6 @@ class MaterialMetadata(ConfigData):
     energy_value: float
 
 
-def get_material_metadata(material_spec: type[MaterialSpec]) -> list[MaterialMetadata]:
-    return [f.metadata[__file__] for f in fields(material_spec)]
-
-
 def parse_materials(simple_config: dict[str, ...]) -> list[MaterialMetadata]:
     metadata: list[MaterialMetadata] = []
     for internal_name, item in itertools.chain.from_iterable((simple_config[key].items() for key in RESOURCE_KEYS)):

@@ -14,8 +14,9 @@ dependencies = [
   "scipy",
   "typing_extensions",
   "toml",
-  "thefuzz", 
-  "nicegui"
+  "thefuzz",
+  "nicegui",
+  "more_itertools"
 ]
 
 [tool.mypy]
