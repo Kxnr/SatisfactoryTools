@@ -1,6 +1,7 @@
 from nicegui import ui, run
 from satisfactory_tools.ui.components import Optimizer
 from satisfactory_tools.categorized_collection import CategorizedCollection
+from satisfactory_tools.plotting.graph import plot_process
 import random
 from functools import partial
 import string
@@ -26,10 +27,11 @@ def render_something():
 async def optimize(func):
     print("optimizing")
     result = await run.cpu_bound(func)
+    print("rendering")
 
     with column:
         with ui.expansion("Result"):
-            ui.label(str(result))
+            ui.plotly(plot_process(result)).classes("w-full")
 
     
 with ui.header(elevated=True):

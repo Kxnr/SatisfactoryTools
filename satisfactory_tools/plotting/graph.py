@@ -4,30 +4,32 @@ from textwrap import dedent
 from more_itertools import bucket
 
 import plotly.graph_objects as go
-from igraph import Graph
+from networkx.drawing import kamada_kawai_layout
 
 from satisfactory_tools.core.process import Process, ProcessNode
 
 
 def make_hover_label(process: ProcessNode):
     return dedent(f"""
-    {name}<br>
+    {process.name}<br>
     Recipe: TODO<br>
     Scale: {process.scale}
     """)
 
 
-def plot_process(process: Process, layout=Graph.layout_auto):
+def plot_process(process: Process, layout=kamada_kawai_layout):
     edges_x = []
     edges_y = []
 
+    positions = kamada_kawai_layout(process.graph)
+
     for edge in process.graph.edges():
-        x0, y0 = process.graph.nodes[edge[0]]["pos"]
+        x0, y0 = positions[edge[0]]
         edges_x.append(x0)
         edges_y.append(y0)
 
 
-        x1, y1 = process.graph.nodes[edge[1]]["pos"]
+        x1, y1 = positions[edge[1]]
         edges_x.append(x1)
         edges_y.append(y1)
 
@@ -56,8 +58,10 @@ def plot_process(process: Process, layout=Graph.layout_auto):
     )
 
     # TODO: add one trace per category
-    for name, nodes in bucket(process.internal_nodes, lambda x: x.name):
-        points = [node["pos"] for node in nodes]
+    buckets = bucket(process.internal_nodes, lambda x: x.name)
+    for name in buckets:
+        nodes = buckets[name]
+        points = positions.values()
         x, y = zip(*points)
         fig.add_trace(go.Scatter(x=x,
                              y=y,
@@ -66,7 +70,7 @@ def plot_process(process: Process, layout=Graph.layout_auto):
                                          size=point_sizes,
                                          # color=[m.process_root.color for m in ordered_vertices],
                                          ),
-                             text=[make_hover_label(v) for v in ordered_vertices],
+                             text=[make_hover_label(v) for v in process.graph.nodes],
                              hovertemplate="%{text}<extra></extra>",
                              # TODO: show machine types in legend
                              showlegend=False,

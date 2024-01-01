@@ -238,3 +238,7 @@ class Process(ProcessNode):
     @classmethod
     def optimize_power(self, target_output: float, available_nodes: Iterable[ProcessNode]) -> Self:
         ...
+
+    @property
+    def graph(self):
+        return self._graph
