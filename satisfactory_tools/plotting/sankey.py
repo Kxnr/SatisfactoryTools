@@ -1,9 +1,9 @@
 import plotly.graph_objects as go
-from process import Process
+from satisfactory_tools.core.process import Process
 
 
-def plot_sankey(process: Process):
-    source, target = zip(*process.graph.edges())
+def plot_process(process: Process):
+    source, target = zip(*process.graph.edges)
     source = list(source)
     target = list(target)
 

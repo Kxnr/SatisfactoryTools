@@ -46,21 +46,6 @@ class HashableDict(RootModel):
         return type(self)(**(self.root | other))
 
 
-class MaterialSpecFactory:
-    def __init__(self, **kwargs):
-        self.initial_values = kwargs
-
-    def __call__(self, **kwargs):
-        return MaterialSpec(material_values=HashableDict(**(self.initial_values | kwargs)))
-
-    def empty(self) -> Self:
-        return self()
-
-    def keys(self):
-        yield from self.initial_values.keys()
-
-
-
 class MaterialSpec(BaseModel, _SignalClass, frozen=True):
     material_values: HashableDict = Field(default_factory=HashableDict)
 
@@ -197,3 +182,18 @@ class MaterialSpec(BaseModel, _SignalClass, frozen=True):
 
     def __contains__(self, name: str):
         return (name in self.material_values) and (not isclose(self.material_values.get(name, 0), 0))
+
+
+class MaterialSpecFactory:
+    def __init__(self, **kwargs):
+        self.initial_values = kwargs
+
+    def __call__(self, **kwargs) -> MaterialSpec:
+        return MaterialSpec(material_values=HashableDict(**(self.initial_values | kwargs)))
+
+    def empty(self) -> MaterialSpec:
+        return self()
+
+    def keys(self):
+        yield from self.initial_values.keys()
+

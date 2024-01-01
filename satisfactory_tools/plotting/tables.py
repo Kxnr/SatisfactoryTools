@@ -1,7 +1,7 @@
 from textwrap import dedent
 
 import plotly.graph_objects as go
-from process import Process
+from satisfactory_tools.core.process import Process
 
 
 def make_row(values: list[str]):
