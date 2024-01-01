@@ -1,19 +1,16 @@
 from dataclasses import dataclass, fields, replace
 from functools import singledispatchmethod
 from typing import Any, Iterable
+from math import isclose
 
 import networkx as nx
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 from scipy.optimize import linprog
 from typing_extensions import Self
+from itertools import chain
 
 from satisfactory_tools.core.material import MaterialSpec
-
-
-def dataclass_to_list(dc):
-    # TODO: deprecated, now that we're using pydantic
-    return [getattr(dc, f.name) for f in fields(dc)]
 
 
 class SolutionFailedException(Exception):
@@ -150,7 +147,7 @@ class Process(ProcessNode):
     @classmethod
     def _filter_eligible_nodes(cls, output_node: ProcessNode, available_nodes: list[ProcessNode]) -> list[ProcessNode]:
         graph = cls._make_graph([output_node] + available_nodes)
-        return nx.ancestors(graph, output_node) | {output_node}
+        return list(nx.ancestors(graph, output_node) | {output_node})
 
     @staticmethod
     def _make_graph(nodes: list[ProcessNode]) -> nx.MultiGraph:
@@ -159,12 +156,10 @@ class Process(ProcessNode):
 
         for i, node_1 in enumerate(nodes):
             for node_2 in nodes[i:]:
-                # TODO: add all materials as attributes to node
-                # TODO: add scale attribute to node
                 # TODO: add cost attribute to node
-                if any(v for _, v in node_1.input_materials | node_2.output_materials):
+                if any(not isclose(v, 0) for _, v in node_1.input_materials | node_2.output_materials):
                     graph.add_edge(node_1, node_2)
-                if any(v for _, v in node_2.input_materials | node_1.output_materials):
+                if any(not isclose(v, 0) for _, v in node_2.input_materials | node_1.output_materials):
                     graph.add_edge(node_2, node_1)
 
         return graph
@@ -178,20 +173,35 @@ class Process(ProcessNode):
         # TODO: availability constraints
         """
         output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output, power_production=0, power_consumption=0)
+        print(process_nodes)
+        print(list(target_output.values()))
 
         connected_nodes = cls._filter_eligible_nodes(output, process_nodes)
         costs = [1 for _ in connected_nodes]  # TODO: cost per recipe
-        output_lower_bound = np.array(dataclass_to_list(target_output))
+        output_lower_bound = np.array(list(target_output.values()))
 
+        print(connected_nodes)
         # matrix where each machine is a column and each material is a row
+        print([
+                list((node.output_materials - node.input_materials).values())
+                + [node.power_consumption - node.power_production] if include_power else []
+            for node in connected_nodes
+        ]
+        )
         material_constraints = np.array(
-            [dataclass_to_list(node.output_materials - node.input_materials) 
-                + ([node.power_consumption - node.power_production] if include_power else []) 
-                for node in connected_nodes]).T
+            [
+                list((node.output_materials - node.input_materials).values())
+                + ([node.power_consumption - node.power_production] if include_power else [])
+            for node in connected_nodes]).T
 
         # use -1 factor to convert problem of materials * coeefficients >= outputs to minimization
         # production >= target
         bounds = (0, None)
+        print(output_lower_bound)
+        print(type(output_lower_bound))
+        print(material_constraints)
+        print(type(material_constraints))
+        print(costs)
         solution = linprog(c=costs,
                            bounds=bounds,
                            A_ub=material_constraints * -1, b_ub=output_lower_bound * -1)
@@ -223,9 +233,9 @@ class Process(ProcessNode):
         # matrix where each machine is a column and each material is a row. production is positive,
         # consumption is negative
         material_constraints = np.array(
-            [dataclass_to_list(node.output_materials - node.input_materials) for node in visited]).T
+            [list((node.output_materials - node.input_materials).values()) for node in visited]).T
 
-        material_consumption_upper_bound = dataclass_to_list(available_materials)
+        material_consumption_upper_bound = list(available_materials.values())
 
         # -1*consumption <= available
         # byproducts >= 0

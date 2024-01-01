@@ -16,11 +16,9 @@ class Optimizer:
         self._machines: Picker | None = None
 
     def set_target_output(self, ui) -> None:
-        # TODO get fields on MaterialSpec
         self._output = fuzzy_sort_setter(ui, list(self._materials.keys()))
 
     def set_input_constraints(self, ui) -> None:
-        # TODO get fields on MaterialSpec
         self._input = fuzzy_sort_setter(ui, list(self._materials.keys()))
 
     def clear_input_constraints(self) -> None:
