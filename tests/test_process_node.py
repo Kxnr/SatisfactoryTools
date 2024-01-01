@@ -1,5 +1,6 @@
 import satisfactory_tools.core.process as module
 from tests import Materials
+from math import isclose
 
 
 def test_process_node():
@@ -36,7 +37,10 @@ def test_simple_optimization_minimize_input():
 
     optimal = module.Process.minimize_input(4*outputs, [source, first, second], include_power=False)
 
-    assert False
+    assert len(optimal._graph.nodes()) == 3
+    assert optimal.input_materials == Materials.empty()
+    assert optimal.output_materials == 4*outputs
+    assert all(isclose(node.scale, 4) for node in optimal._graph.nodes())
 
 
 def test_optimization_extraneous_recipes_minimize_input():
@@ -54,7 +58,10 @@ def test_optimization_extraneous_recipes_minimize_input():
 
     optimal = module.Process.minimize_input(4*outputs, [source, first, second, third, fourth], include_power=False)
 
-    assert False
+    assert len(optimal._graph.nodes()) == 3
+    assert optimal.input_materials == Materials.empty()
+    assert optimal.output_materials == 4*outputs
+    assert all(isclose(node.scale, 4) for node in optimal._graph.nodes())
 
 
 def test_optimization_loop_available_minimize_input():
@@ -73,7 +80,10 @@ def test_optimization_loop_available_minimize_input():
 
     optimal = module.Process.minimize_input(4*outputs, [source, first, second, loop_1, loop_2], include_power=False)
 
-    assert False
+    assert len(optimal._graph.nodes()) == 3
+    assert optimal.input_materials == Materials.empty()
+    assert optimal.output_materials == 4*outputs
+    assert all(isclose(node.scale, 4) for node in optimal._graph.nodes())
 
 
 def test_optimization_simple_maximize_output():
@@ -86,7 +96,10 @@ def test_optimization_simple_maximize_output():
 
     optimal = module.Process.maximize_output(4*inputs, outputs, [first, second], include_power=False)
 
-    assert False
+    assert len(optimal._graph.nodes()) == 2
+    assert optimal.input_materials == 4*inputs
+    assert optimal.output_materials == 4*outputs
+    assert all(isclose(node.scale, 4) for node in optimal._graph.nodes())
 
 
 def test_optimization_extraneous_recipes_maximize_output():
@@ -103,7 +116,10 @@ def test_optimization_extraneous_recipes_maximize_output():
 
     optimal = module.Process.maximize_output(4*inputs, outputs, [first, second, third, fourth], include_power=False)
 
-    assert False
+    assert len(optimal._graph.nodes()) == 2
+    assert optimal.input_materials == 4*inputs
+    assert optimal.output_materials == 4*outputs
+    assert all(isclose(node.scale, 4) for node in optimal._graph.nodes())
 
 
 # def test_optimization_loop_available_maximize_output():

@@ -25,11 +25,12 @@ def render_something():
 
 async def optimize(func):
     print("optimizing")
+    result = await run.cpu_bound(func)
+
     with column:
-        ui.label("result:")
-        result = await run.cpu_bound(func)
-    ui.label(repr(result))
-    print("optimized")
+        with ui.expansion("Result"):
+            ui.label(str(result))
+
     
 with ui.header(elevated=True):
     ui.button(on_click=lambda: left_drawer.toggle(), icon="menu")

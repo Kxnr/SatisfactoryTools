@@ -35,14 +35,16 @@ class ProcessNode(_SignalClass):
     @classmethod
     def from_nodes(cls, *nodes: Self, name: str="Composite") -> Self:
         empty = nodes[0].input_materials.empty()  # FIXME: why
-        sum_inputs = sum((node.input_materials for node in nodes), empty)
-        sum_outputs = sum((node.output_materials for node in nodes), empty)
+
+        # TODO: hide input/output so that scale is unavoidable
+        sum_inputs = sum((node.scaled_input for node in nodes), empty)
+        sum_outputs = sum((node.scaled_output for node in nodes), empty)
 
         net_inputs = (sum_inputs - (sum_outputs | sum_inputs)) > 0
         net_outputs = (sum_outputs - (sum_inputs | sum_outputs)) > 0
 
-        power_production = sum(node.power_production for node in nodes)
-        power_consumption = sum(node.power_consumption for node in nodes)
+        power_production = sum(node.power_production * node.scale for node in nodes)
+        power_consumption = sum(node.power_consumption * node.scale for node in nodes)
 
         return cls(name=name, input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=frozenset(nodes))
 
@@ -121,28 +123,23 @@ class ProcessNode(_SignalClass):
 
 ProcessNode.update_forward_refs()
 
+
 class Process(ProcessNode):
     """
-    Store graph as adjacency matrix, no real value in adjacency list here because optimization runs on the full graph
-    rather than traversal. This also saves us from the issue of binding a ProcessNodes to Optimization instances
-    1:1, since it may be useful to re-use the same CompositeProcessNode, representing a factory, in multiple
-    different contexts or optimizations. Representing the graph this way saves us from needing an additional
-    intermediate class or modifying nodes.
-
-    # TODO: save solution to Process
+    Store graph of nodes defining process.
     """
     _graph: nx.MultiGraph
 
     @classmethod
     def from_nodes(cls, nodes_or_graph: Iterable[ProcessNode] | nx.MultiGraph) -> Self:
         if isinstance(nodes_or_graph, nx.MultiGraph):
-            _graph =nodes_or_graph
+            _graph = nodes_or_graph
         else:
             _graph = cls._make_graph(nodes_or_graph)
 
-        self = super().from_nodes(*_graph.nodes)
-        self._graph = _graph
-        return self
+        obj = super().from_nodes(*_graph.nodes)
+        obj._graph = _graph
+        return obj
 
     @classmethod
     def _filter_eligible_nodes(cls, output_node: ProcessNode, available_nodes: list[ProcessNode]) -> list[ProcessNode]:
@@ -173,21 +170,11 @@ class Process(ProcessNode):
         # TODO: availability constraints
         """
         output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output, power_production=0, power_consumption=0)
-        print(process_nodes)
-        print(list(target_output.values()))
 
         connected_nodes = cls._filter_eligible_nodes(output, process_nodes)
         costs = [1 for _ in connected_nodes]  # TODO: cost per recipe
         output_lower_bound = np.array(list(target_output.values()))
 
-        print(connected_nodes)
-        # matrix where each machine is a column and each material is a row
-        print([
-                list((node.output_materials - node.input_materials).values())
-                + [node.power_consumption - node.power_production] if include_power else []
-            for node in connected_nodes
-        ]
-        )
         material_constraints = np.array(
             [
                 list((node.output_materials - node.input_materials).values())
@@ -197,11 +184,6 @@ class Process(ProcessNode):
         # use -1 factor to convert problem of materials * coeefficients >= outputs to minimization
         # production >= target
         bounds = (0, None)
-        print(output_lower_bound)
-        print(type(output_lower_bound))
-        print(material_constraints)
-        print(type(material_constraints))
-        print(costs)
         solution = linprog(c=costs,
                            bounds=bounds,
                            A_ub=material_constraints * -1, b_ub=output_lower_bound * -1)
@@ -211,7 +193,7 @@ class Process(ProcessNode):
 
         # TODO: remove output node from solution
         # TODO: remove source node from solution
-        return cls.from_nodes([node * scale for node, scale in zip(connected_nodes, solution.x) if scale >= 0])
+        return cls.from_nodes([node * scale for node, scale in zip(connected_nodes, solution.x) if not isclose(scale, 0) and node in process_nodes])
 
     @classmethod
     def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False) -> Self:
@@ -251,7 +233,7 @@ class Process(ProcessNode):
 
         # TODO: remove sink node from solution
         # TODO: remove source node from solution
-        return cls.from_nodes([node * scale for node, scale in zip(visited, solution.x) if scale >= 0])
+        return cls.from_nodes([node * scale for node, scale in zip(visited, solution.x) if not isclose(scale, 0) and node in process_nodes])
 
     @classmethod
     def optimize_power(self, target_output: float, available_nodes: Iterable[ProcessNode]) -> Self:
