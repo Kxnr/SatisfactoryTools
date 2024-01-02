@@ -15,64 +15,6 @@ class DependencyException(Exception):
     """
 
 
-class Optimizer:
-    def __init__(self, materials: MaterialSpecFactory, available_processes: CategorizedCollection[str, ProcessNode]):
-        self.include_power = False
-        self._include_input = False
-
-        self._materials = materials
-        self._available_processes = available_processes
-
-        self.clear_output()
-        self.clear_input()
-        self.clear_processes()
-
-    def reset(self):
-        self.clear_input()
-        self.clear_output()
-        self.clear_processes()
-
-    def clear_output(self) -> None:
-        self.output_setter: Setter = Setter(list(self._materials.keys()))
-
-    def set_input(self) -> None:
-        self.include_input = True
-
-    def clear_input(self) -> None:
-        self.input_setter: Setter = Setter(list(self._materials.keys()))
-        self._include_input = False
-
-    def clear_processes(self) -> None:
-        self.process_picker: Picker = Picker(self._available_processes)
-
-    @property
-    def input_materials(self) -> MaterialSpec | None:
-        if not self.include_input:
-            return None
-
-        return self._materials(**self.input_setter.values)
-
-    @property
-    def output_materials(self) -> MaterialSpec:
-        return self._materials(**self.output_setter.values)
-
-    @property
-    def processes(self) -> Iterable[ProcessNode]:
-        return self.process_picker.selected
-
-    def optimize_input(self) -> Process:
-        return Process.minimize_input(self.output_materials, list(self.processes), self.include_power)
-
-    def optimize_output(self) -> Process:
-        if not self.input_materials:
-            raise DependencyException("Available input required.")
-
-        return Process.maximize_output(self.input_materials, self.output_materials, list(self.processes), self.include_power)
-
-    def optimize_power(self) -> Process:
-        raise NotImplementedError()
-
-
 class OptimizationResult:
     def __init__(self, process: Process):
         self.process = process
@@ -100,3 +42,65 @@ class OptimizationResult:
             f"Total Power Production: {sum(node.power_production * node.scale for node in self.process.internal_nodes)}\n"
             f"Total Power Consumption: {sum(node.consumption * node.scale for node in self.process.internal_nodes)}\n"
         )
+
+
+class Optimizer:
+    def __init__(self, materials: MaterialSpecFactory, available_processes: CategorizedCollection[str, ProcessNode]):
+        self.include_power = False
+        self._include_input = False
+
+        self._materials = materials
+
+        self.output_setter: Setter = Setter(list(self._materials.keys()))
+        self.input_setter: Setter = Setter(list(self._materials.keys()))
+        self.process_picker: Picker = Picker(available_processes)
+
+        self.clear_output()
+        self.clear_input()
+        self.clear_processes()
+
+    def reset(self):
+        self.clear_input()
+        self.clear_output()
+        self.clear_processes()
+
+    def clear_output(self) -> None:
+        self.output_setter.clear()
+
+    def set_input(self) -> None:
+        self.include_input = True
+
+    def clear_input(self) -> None:
+        self.input_setter.clear()
+        self._include_input = False
+
+    def clear_processes(self) -> None:
+        self.process_picker.clear()
+
+    @property
+    def input_materials(self) -> MaterialSpec | None:
+        if not self.include_input:
+            return None
+
+        return self._materials(**self.input_setter.values)
+
+    @property
+    def output_materials(self) -> MaterialSpec:
+        return self._materials(**self.output_setter.values)
+
+    @property
+    def processes(self) -> Iterable[ProcessNode]:
+        return self.process_picker.selected
+
+    def optimize_input(self) -> OptimizationResult:
+        return OptimizationResult(Process.minimize_input(self.output_materials, list(self.processes), self.include_power))
+
+    def optimize_output(self) -> OptimizationResult:
+        if not self.input_materials:
+            raise DependencyException("Available input required.")
+
+        return OptimizationResult(Process.maximize_output(self.input_materials, self.output_materials, list(self.processes), self.include_power))
+
+    def optimize_power(self) -> Process:
+        raise NotImplementedError()
+

@@ -18,6 +18,9 @@ class Picker:
         self._category_visibility = {key: self.default_visibility for key in self.elements.keys()}
         self._category_counters = {key: 0 for key in self.elements.keys()}
 
+    def clear(self):
+        pass
+
     def render_category_selectors(self, ui: ui) -> None:
         # TODO: fix sizing to labels, switch to progress button?
         # TODO: color change on full
@@ -51,7 +54,6 @@ class Picker:
         self._update_category_selectors()
 
     def _update_category_selectors(self, item: str | None = None):
-        print("category update")
         if item:
             update_tags = self.elements.value_tags(item)
         else:
@@ -94,6 +96,9 @@ class Setter:
         self._selected = {key: False for key in self.elements}
         self._values = {key: 0 for key in self.elements}
 
+    def clear(self):
+        pass
+
     def render_search_box(self, ui: ui) -> None:
         def _set_keys(keys: list[str]):
             for key in self._selected.keys():
@@ -117,27 +122,3 @@ class Setter:
     def values(self) -> dict[str, int]:
         return {key: value for key, value in self._values.items() if value}
 
-
-def fuzzy_sort_picker(ui: ui, elements: CategorizedCollection[str, ...]) -> Picker:
-    picker = Picker(elements)
-    picker.render_search_box(ui)
-
-    with ui.row(wrap=True) as row:
-        row.classes("max-h-80 max-w-96 overflow-scroll")
-        picker.render_category_selectors(ui)
-
-    with ui.row(wrap=True) as row:
-        row.classes("max-h-80 max-w-96 overflow-scroll")
-        picker.render_selectors(ui)
-
-    return picker
-
-
-def fuzzy_sort_setter(ui: ui, elements: Iterable[str]) -> Setter:
-    picker = Setter(elements)
-    picker.render_search_box(ui)
-
-    with ui.column():
-        picker.render_setters(ui)
-
-    return picker
