@@ -23,8 +23,6 @@ class AutoMapping(Generic[T]):
         def __getitem__(self, k: Any) -> "AutoMapping[S]":
             return AutoMapping([item for item in self._items if getattr(item, self.field_name, MISSING) == k])
 
-        def get(self, k: Any):
-
         def __iter__(self):
             yield from (getattr(item, self.field_name) for item in self._items)
 

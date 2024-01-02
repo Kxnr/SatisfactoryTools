@@ -21,7 +21,7 @@ class Config:
 
 
 class ConfigParser:
-    def __init__(self, config_path: Path, user_dir: Path, encoding="utf-16"):
+    def __init__(self, config_path: Path, user_dir: Path | None = None, encoding="utf-16"):
         self.config_path = config_path
         self.user_dir = user_dir
 
@@ -59,22 +59,28 @@ class ConfigParser:
         for recipe in self.recipe_data:
             for machine_class in recipe.machines:
                 for machine in producers_lookup.class_name[machine_class].values:
-                    result[recipe.class_name] = ProcessNode(name=recipe.display_name,
-                                                            input_materials=self._dict_to_material_spec(recipe.inputs, material_class),
-                                                            output_materials=self._dict_to_material_spec(recipe.outputs, material_class),
-                                                            power_production=machine.power_production,
-                                                            power_consumption=machine.power_consumption)
+                    try:
+                        result[recipe.class_name] = ProcessNode(name=recipe.display_name,
+                                                                input_materials=self._dict_to_material_spec(recipe.inputs, material_class),
+                                                                output_materials=self._dict_to_material_spec(recipe.outputs, material_class),
+                                                                power_production=machine.power_production,
+                                                                power_consumption=machine.power_consumption)
+                    except:
+                        # workaround for ignored items, currently 1 known: Portable Miner
+                        print(machine)
+                        breakpoint()
+                        continue
 
-        for extractor in machines.extractors:
+        for extractor in self.machine_data.extractors:
             for resource in extractor.resources:
                 # TODO: cycle time
                 result[extractor.class_name] = ProcessNode(name=extractor.display_name,
-                                                           input_materials=materials.empty(),
-                                                           output_materials=self._dict_to_material_spec({resource: extractor.items_per_cycle}, material_class),
-                                                           power_production=extractor.power_production,
-                                                           power_consumption=extractor.power_consumption)
+                                                   input_materials=material_class.empty(),
+                                                   output_materials=self._dict_to_material_spec({resource: extractor.items_per_cycle}, material_class),
+                                                   power_production=extractor.power_production,
+                                                   power_consumption=extractor.power_consumption)
 
-        for generator in machines.extractors:
+        for generator in self.machine_data.generators:
             # TODO: need the material metadata to map from class name to resource name
             pass
 
@@ -105,7 +111,7 @@ class ConfigParser:
                     return 1000.0
 
         try:
-            return materials_factory(**{material.display_name: value / get_scale(material.material_type) for material, value in materials_dict.items()})
+            return materials_factory(**{material.display_name: value / get_scale(material.material_type) for material, value in zip(map(lookup_material, materials_dict.keys()), materials_dict.values())})
         except KeyError:
             # FIXME: custom exception
             raise Exception("Recipe requires excluded material or produces excluded product.")
@@ -113,60 +119,6 @@ class ConfigParser:
     def parse_user_dir(self):
         # load saved user ProcessNodes
         pass
-
-
-def parse_config(config_path: str, encoding="utf-16"):
-    with open(config_path, "r", encoding=encoding) as f:
-        config_data = simplify_config(json.loads(f.read()))
-        materials = parse_materials(config_data)
-
-        material_translation = {material.class_name: standardize(material.display_name) for material in materials}
-        machines = parse_machines(config_data, material_translation)
-        recipes = parse_recipes(config_data, material_translation)
-        # TODO: saved recipes
-
-        # TODO: pydantic class to have aliases
-        # TODO: standardize materials when parsing, rather than config construction
-        materials = MaterialSpecFactory(**{standardize(material.display_name): 0 for material in materials})
-
-        process_nodes = _sythesize_recipes_and_machines(machines, recipes, materials)
-
-    return Config(materials=materials, recipes=process_nodes)
-
-
-def _sythesize_recipes_and_machines(machines: Machines, recipes: list[RecipeData], materials: type[MaterialSpec]) -> CategorizedCollection[str, ProcessNode]:
-    result: CategorizedCollection[str, ProcessNode] = CategorizedCollection()
-
-    machines_dict = {machine.class_name: machine for machine in machines.producers}
-
-    for recipe in recipes:
-        for machine_class in recipe.machines:
-            machine = machines_dict.get(machine_class)
-
-            if machine is None:
-                continue
-
-            result[recipe.class_name] = ProcessNode(name=recipe.display_name,
-                                                    input_materials=materials(**recipe.inputs),
-                                                    output_materials=materials(**recipe.outputs),
-                                                    power_production=machine.power_production,
-                                                    power_consumption=machine.power_consumption)
-
-    for extractor in machines.extractors:
-        for resource in extractor.resources:
-        # TODO: cycle time
-            result[extractor.class_name] = ProcessNode(name=extractor.display_name,
-                                                       input_materials=materials.empty(),
-                                                       output_materials=materials(**{resource: extractor.items_per_cycle}),
-                                                       power_production=extractor.power_production,
-                                                       power_consumption=extractor.power_consumption)
-
-    for generator in machines.extractors:
-        # TODO: need the material metadata to map from class name to resource name
-        pass
-
-    return result
-
 
 def _tag_recipe_node():
     pass
