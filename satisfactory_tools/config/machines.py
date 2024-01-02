@@ -93,7 +93,7 @@ def _parse_extractor(extractor_config: dict[str, ...]) -> ExtractorData:
     duration = float(extractor_config["mExtractCycleTime"]) / CYCLES_PER_MINUTE
 
     if extractor_config.get("mAllowedResources"):
-        resources: Iterable[str] = extractor_config["mAllowedResources"].strip("()").split(",")
+        resources: Iterable[str] = [get_class_name(r) for r in extractor_config["mAllowedResources"].strip("()").split(",")]
     elif extractor_config.get("mParticleMap"):
         resources = re.findall(particle_map_pattern, extractor_config["mParticleMap"])
     else:

@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from satisfactory_tools.config import ConfigParser
+import json
 
 
 def game_config_exists(game_config_path: str | Path="./Docs.json") -> bool:
@@ -14,3 +15,9 @@ pytestmark = pytest.mark.skipif(not game_config_exists(), reason="Game config no
 def test_ConfigParser():
     parser = ConfigParser(Path("./Docs.json"))
     parser.parse_config()
+
+
+def test_simplify_config():
+    config_content = json.loads(Path("./Docs.json").read_text(encoding="utf-16"))
+    simple_config = ConfigParser._simplify_config(config_content)
+

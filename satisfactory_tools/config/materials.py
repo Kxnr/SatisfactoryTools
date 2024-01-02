@@ -13,6 +13,7 @@ RESOURCE_KEYS = ("FGItemDescriptor",
                  "FGItemDescriptorNuclearFuel",
                  "FGAmmoTypeInstantHit",
                  "FGAmmoTypeSpreadshot",
+                 "FGEquipmentDescriptor"
                  )
 
 

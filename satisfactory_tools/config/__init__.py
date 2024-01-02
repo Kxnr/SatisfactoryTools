@@ -58,18 +58,13 @@ class ConfigParser:
 
         for recipe in self.recipe_data:
             for machine_class in recipe.machines:
+                # ignores recipes that can't be created by parsed machines
                 for machine in producers_lookup.class_name[machine_class].values:
-                    try:
-                        result[recipe.class_name] = ProcessNode(name=recipe.display_name,
-                                                                input_materials=self._dict_to_material_spec(recipe.inputs, material_class),
-                                                                output_materials=self._dict_to_material_spec(recipe.outputs, material_class),
-                                                                power_production=machine.power_production,
-                                                                power_consumption=machine.power_consumption)
-                    except:
-                        # workaround for ignored items, currently 1 known: Portable Miner
-                        print(machine)
-                        breakpoint()
-                        continue
+                    result[recipe.class_name] = ProcessNode(name=recipe.display_name,
+                                                            input_materials=self._dict_to_material_spec(recipe.inputs, material_class),
+                                                            output_materials=self._dict_to_material_spec(recipe.outputs, material_class),
+                                                            power_production=machine.power_production,
+                                                            power_consumption=machine.power_consumption)
 
         for extractor in self.machine_data.extractors:
             for resource in extractor.resources:
