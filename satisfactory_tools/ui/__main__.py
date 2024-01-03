@@ -2,7 +2,6 @@ from nicegui import ui, run
 from satisfactory_tools.ui.models import Optimizer, OptimizationResult
 from satisfactory_tools.ui.views import OptimizerView
 from satisfactory_tools.categorized_collection import CategorizedCollection
-from satisfactory_tools.plotting.graph import plot_process
 import random
 from functools import partial
 import string
