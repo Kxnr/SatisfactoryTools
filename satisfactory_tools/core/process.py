@@ -154,10 +154,10 @@ class Process(ProcessNode):
         for i, node_1 in enumerate(nodes):
             for node_2 in nodes[i:]:
                 # TODO: add cost attribute to node
-                if any(not isclose(v, 0) for _, v in node_1.input_materials | node_2.output_materials):
-                    graph.add_edge(node_2, node_1)
-                if any(not isclose(v, 0) for _, v in node_2.input_materials | node_1.output_materials):
+                if any(not isclose(v, 0) for _, v in node_1.output_materials | node_2.input_materials):
                     graph.add_edge(node_1, node_2)
+                if any(not isclose(v, 0) for _, v in node_2.output_materials | node_1.input_materials):
+                    graph.add_edge(node_2, node_1)
 
         return graph
 

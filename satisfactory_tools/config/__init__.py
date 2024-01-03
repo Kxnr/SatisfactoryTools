@@ -60,7 +60,7 @@ class ConfigParser:
             for machine_class in recipe.machines:
                 # ignores recipes that can't be created by parsed machines
                 for machine in producers_lookup.class_name[machine_class].values:
-                    result[recipe.class_name] = ProcessNode(name=recipe.display_name,
+                    result[recipe.display_name] = ProcessNode(name=recipe.display_name,
                                                             input_materials=self._dict_to_material_spec(recipe.inputs, material_class),
                                                             output_materials=self._dict_to_material_spec(recipe.outputs, material_class),
                                                             power_production=machine.power_production,
@@ -69,9 +69,12 @@ class ConfigParser:
         for extractor in self.machine_data.extractors:
             for resource in extractor.resources:
                 # TODO: cycle time
-                result[extractor.class_name] = ProcessNode(name=extractor.display_name,
+                output_materials = self._dict_to_material_spec({resource: extractor.items_per_cycle}, material_class)
+                # TODO: get resource display name here
+                name = " ".join([extractor.display_name, resource])
+                result[extractor.display_name] = ProcessNode(name=extractor.display_name,
                                                    input_materials=material_class.empty(),
-                                                   output_materials=self._dict_to_material_spec({resource: extractor.items_per_cycle}, material_class),
+                                                   output_materials=output_materials,
                                                    power_production=extractor.power_production,
                                                    power_consumption=extractor.power_consumption)
 

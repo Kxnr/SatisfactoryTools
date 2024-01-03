@@ -56,6 +56,8 @@ class OptimizationResultView(View):
     def render(self):
         with ui.expansion(self.model.process.name):
             ui.plotly(self.model.graph()).classes("w-full")
+            ui.plotly(self.model.sankey()).classes("w-full")
+            ui.markdown(self.model.table()).classes("w-full")
 
 
 class OptimizerView(View):
@@ -64,6 +66,7 @@ class OptimizerView(View):
         self.output_element = output_element
 
     def render(self):
+        # TODO: set name
         with ui.stepper().props("vertical") as stepper:
             with ui.step("Target Output") as step:
                 SetterView(self.model.output_setter).render()

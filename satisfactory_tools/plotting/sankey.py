@@ -3,12 +3,13 @@ from satisfactory_tools.core.process import Process
 
 
 def plot_process(process: Process):
-    source, target = zip(*process.graph.edges)
+    # in digraph, last element of tuple is weights
+    source, target, *_ = zip(*process.graph.edges)
     source = list(source)
     target = list(target)
 
     # TODO: scale links with edge properties. WIP while edge properties not implemented
-    labels, weights = [(node.name, node.scale) for node in source ]
+    labels, weights = zip(*[(node.name, node.scale) for node in source])
 
     # labels, weights = zip(*[get_materials_for_link(start, end, ordered_vertices) for (start, end) in edges])
 
@@ -26,4 +27,4 @@ def plot_process(process: Process):
             )
         )
     )
-    fig.show()
+    return fig 
