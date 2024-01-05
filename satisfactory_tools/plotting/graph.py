@@ -54,7 +54,7 @@ def plot_process(process: Process, layout=spring_layout):
                 size=10,
                 color="black",
                 angleref="previous",
-                standoff=[size//1.8 for size in point_sizes]
+                standoff=[size / 1.8 for size in point_sizes]
             ),
             showlegend=False
         )
