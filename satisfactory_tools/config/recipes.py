@@ -18,7 +18,7 @@ class RecipeData(ConfigData):
 
 
 def parse_recipes(simple_config: dict[str, ...]) -> list[RecipeData]:
-    resource_capture_group = r".*\.(\w+).*?"
+    resource_capture_group = r".*?\..*?\.(\w+).*?"
     ingredients_pattern = rf"\(ItemClass={resource_capture_group},Amount=(\d+)\)"
     recipes = []
 

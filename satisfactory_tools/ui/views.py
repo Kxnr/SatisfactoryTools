@@ -55,9 +55,9 @@ class OptimizationResultView(View):
 
     def render(self):
         with ui.expansion(self.model.process.name):
-            ui.plotly(self.model.graph()).classes("w-full")
-            ui.plotly(self.model.sankey()).classes("w-full")
-            ui.markdown(self.model.table()).classes("w-full")
+            ui.plotly(self.model.graph())
+            ui.plotly(self.model.sankey())
+            ui.markdown(self.model.table())
 
 
 class OptimizerView(View):
