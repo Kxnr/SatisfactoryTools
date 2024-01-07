@@ -33,18 +33,18 @@ def _values_for_key_list(simple_config: dict[str, ...], key_list: list[str]) -> 
     yield from itertools.chain.from_iterable(simple_config[key].values() for key in key_list)
 
 
-@dataclass
+@dataclass(frozen=True)
 class MachineData(ConfigData):
     power_consumption: float
     power_production: float
 
-@dataclass
+@dataclass(frozen=True)
 class ExtractorData(MachineData):
     resources: list[str]
     cycle_time: float
     items_per_cycle: float
 
-@dataclass
+@dataclass(frozen=True)
 class FuelManifest:
     fuel: str
     byproduct: str | None = None
@@ -54,11 +54,11 @@ class FuelManifest:
     byproduct_load: float = 0
     supplemental_load: float = 0
 
-@dataclass
+@dataclass(frozen=True)
 class GeneratorData(MachineData):
-    fuels: list[FuelManifest]
+    fuels: tuple[FuelManifest, ...]
 
-@dataclass
+@dataclass(frozen=True)
 class Machines:
     producers: list[MachineData]
     extractors: list[ExtractorData]
@@ -101,7 +101,7 @@ def _parse_extractor(extractor_config: dict[str, ...]) -> ExtractorData:
 
     base_config = _parse_normal_machine(extractor_config)
     return ExtractorData(
-        resources=list(resources),
+        resources=tuple(resources),
         cycle_time=duration,
         items_per_cycle=items_per_cycle,
         **asdict(base_config)
@@ -113,7 +113,7 @@ def _parse_generator(generator_config: dict[str, ...]) -> GeneratorData | None:
     if "mFuel" not in generator_config:
         return None
 
-    fuels = [
+    fuels = tuple(
         FuelManifest(
             fuel=fuel_config["mFuelClass"],
             byproduct=fuel_config["mByproduct"],
@@ -124,7 +124,7 @@ def _parse_generator(generator_config: dict[str, ...]) -> GeneratorData | None:
             supplemental_load=float(generator_config["mSupplementalLoadAmount"] or 0)
         )
         for fuel_config in generator_config["mFuel"]
-    ]
+    )
 
     base_config = _parse_normal_machine(generator_config)
 

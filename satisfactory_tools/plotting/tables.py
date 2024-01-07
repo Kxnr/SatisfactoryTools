@@ -25,11 +25,12 @@ def recipe_summary(process: Process):
     headers = ["Machine Type", "Count", "Recipe", "Ingredients", "Products"]
     rows = []
     for node in process.graph.nodes:
+        # FIXME: using contains here is weird--Material should just support getting non-zero elements
         rows.append([node.name,
-                     node.scale,
+                     f"{node.scale:.2f}",
                      node.name,
-                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.input_materials]),
-                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.output_materials]),
+                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.input_materials if name in node.input_materials]),
+                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.output_materials if name in node.output_materials]),
                          ])
 
     # transpose row to column major order

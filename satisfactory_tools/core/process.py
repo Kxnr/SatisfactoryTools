@@ -11,6 +11,7 @@ from typing_extensions import Self
 from itertools import chain
 
 from satisfactory_tools.core.material import MaterialSpec
+from satisfactory_tools.config.machines import MachineData
 
 
 class SolutionFailedException(Exception):
@@ -31,6 +32,8 @@ class ProcessNode(_SignalClass):
     # internal_nodes: set[Self] = Field(default_factory=set)
     internal_nodes: frozenset["ProcessNode"] = Field(default_factory=frozenset)
     scale: float = 1
+
+    machine: MachineData | None = None
 
     @classmethod
     def from_nodes(cls, *nodes: Self, name: str="Composite") -> Self:
@@ -123,7 +126,6 @@ class ProcessNode(_SignalClass):
 
 ProcessNode.update_forward_refs()
 
-
 class Process(ProcessNode):
     """
     Store graph of nodes defining process.
@@ -162,7 +164,7 @@ class Process(ProcessNode):
         return graph
 
     @classmethod
-    def minimize_input(cls, target_output: MaterialSpec, process_nodes: list[ProcessNode],include_power=False) -> Self:
+    def minimize_input(cls, target_output: MaterialSpec, process_nodes: list[ProcessNode],include_power=False, name="Result") -> Self:
         """
         Find the weights on process nodes that produce the desired output with the least input and
         process cost.
@@ -196,7 +198,7 @@ class Process(ProcessNode):
         return cls.from_nodes([node * scale for node, scale in zip(connected_nodes, solution.x) if not isclose(scale, 0) and node in process_nodes])
 
     @classmethod
-    def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False) -> Self:
+    def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False, name="Result") -> Self:
         """
         Maximize production of output materials where input materials are constrained. If extractors
         are allowed, problem may be unbounded due to unlimited material supply. This may be addressed

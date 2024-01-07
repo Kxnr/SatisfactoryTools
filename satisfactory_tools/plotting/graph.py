@@ -97,3 +97,38 @@ def plot_process(process: Process, layout=spring_layout):
 
     return fig
 
+
+def plot_process_echart(process: Process, layout=spring_layout):
+    positions = layout(process.graph)
+    ordered_nodes = list(process.graph.nodes)
+    config = {
+        "legend": {
+            "data": ['HTMLElement', 'WebGL', 'SVG', 'CSS', 'Other']
+        },
+        "series": [
+            {
+                "type": 'graph',
+                "layout": '',
+                "label": {
+                    "position": 'right',
+                    "formatter": '{b}'
+                },
+                "draggable": True,
+                "nodes": [
+                    {"name": node.name,
+                     "x": positions[node][0],
+                     "y": positions[node][1],
+                     }
+                     # "value": , "category": }
+                     for node in ordered_nodes
+                ],
+                # TODO: machine type as tagetory
+                # "categories": {},
+
+                # node names aren't currently unique, so need to use indices
+                "edges": [{"source": ordered_nodes.index(edge[0]), "target": ordered_nodes.index(edge[1])} for edge in process.graph.edges()]
+            }
+        ]
+    }
+    print(config)
+    return config

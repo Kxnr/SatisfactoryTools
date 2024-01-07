@@ -7,7 +7,7 @@ from functools import partial
 import string
 from pathlib import Path
 
-from satisfactory_tools.config import ConfigParser
+from satisfactory_tools.config.parser import ConfigParser
 
 config = ConfigParser(Path("./Docs.json")).parse_config()
 
@@ -20,6 +20,7 @@ config = ConfigParser(Path("./Docs.json")).parse_config()
 optimizer = Optimizer(config.materials, config.recipes)
 
 column = ui.column()
+column.classes = "w-full"
 optimizer_view = OptimizerView(optimizer, column)
 
 with ui.header(elevated=True):

@@ -15,13 +15,13 @@ class _SignalClass:
     """
 
 
-class HashableDict(RootModel):
+class HashableDict(RootModel[dict[str, float]]):
     root: dict[str, float]
 
     def __init__(self, **kwargs):
         return super().__init__(kwargs)
 
-    def __hash__(self) -> str:
+    def __hash__(self) -> int:
         return hash(frozenset(self.root.items()))
 
     def items(self):

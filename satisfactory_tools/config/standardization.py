@@ -21,7 +21,7 @@ def get_class_name(value: str) -> str:
     return match.group(1)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConfigData:
     class_name: str
     display_name: str

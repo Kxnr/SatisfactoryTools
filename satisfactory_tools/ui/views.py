@@ -54,9 +54,11 @@ class OptimizationResultView(View):
         self.model = model
 
     def render(self):
-        with ui.expansion(self.model.process.name):
-            ui.plotly(self.model.graph())
+        with ui.expansion(self.model.process.name) as container:
+            container.classes("w-full")
+            # ui.plotly(self.model.graph())
             ui.plotly(self.model.sankey())
+            ui.echart(self.model.egraph())
             ui.markdown(self.model.table())
 
 
@@ -87,6 +89,7 @@ class OptimizerView(View):
                 with ui.row():
                     # TODO: more description
                     # TODO: render optimization result
+                    ui.input("name")
                     ui.button("Maximize output", on_click=partial(self.run_and_render, self.model.optimize_output, OptimizationResultView, self.output_element))
                     ui.button("Minimize input", on_click=partial(self.run_and_render, self.model.optimize_input, OptimizationResultView, self.output_element))
                     ui.button("Previous", on_click=stepper.previous)

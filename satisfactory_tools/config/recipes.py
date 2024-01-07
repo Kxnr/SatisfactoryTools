@@ -8,7 +8,7 @@ RECIPE_KEY = "FGRecipe"
 # TODO: accelerator recipes have mVariablePowerConsumptionConstant and mVariablePowerConsumptionFactor
 # TODO: to account for power difference in recipes
 
-@dataclass
+@dataclass(frozen=True)
 class RecipeData(ConfigData):
     inputs: dict[str, float] 
     outputs: dict[str, float]

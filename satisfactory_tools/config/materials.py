@@ -22,8 +22,16 @@ class MaterialType(Enum):
     LIQUID: str = "RF_LIQUID"
     GAS: str = "RF_GAS"
 
+    def scale(self) -> float:
+        match self:
+            case self.SOLID:
+                return 1.0
+            case _:
+                return 1000.0
 
-@dataclass
+
+
+@dataclass(frozen=True)
 class MaterialMetadata(ConfigData):
     material_type: MaterialType
     energy_value: float

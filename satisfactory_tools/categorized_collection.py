@@ -44,9 +44,13 @@ class CategorizedCollection(Generic[K, V]):
             for key in keys:
                 self.set_tag(key, tag)
 
-    def set_tag(self, key: K, tag: str) -> None:
-        self._tags[tag].add(key)
-        self._inverse_tags[key].add(tag)
+    def set_tag(self, key: K, tags: str | Iterable[str]) -> None:
+        if isinstance(tags, str):
+            tags = [tags]
+
+        for tag in tags:
+            self._tags[tag].add(key)
+            self._inverse_tags[key].add(tag)
 
     def __getitem__(self, key: K) -> V:
         return self._values[key]

@@ -30,6 +30,9 @@ class OptimizationResult:
     def graph(self):
         return graph.plot_process(self.process)
 
+    def egraph(self):
+        return graph.plot_process_echart(self.process)
+
     def sankey(self):
         return sankey.plot_process(self.process)
 
