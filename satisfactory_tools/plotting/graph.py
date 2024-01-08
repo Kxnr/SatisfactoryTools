@@ -12,7 +12,7 @@ from satisfactory_tools.core.process import Process, ProcessNode
 
 def plot_process(process: Process, layout=spring_layout):
     def scale_coordinate(pt: float) -> float:
-        return (pt + 1) * 500
+        return (pt + 1) * 250
 
     def scale_value(value: float, pre_scale: float=.1) -> float:
         scaled_value = 1 / (1 + math.exp(2 - (value*pre_scale)))
