@@ -57,8 +57,8 @@ class OptimizationResultView(View):
         with ui.expansion(self.model.process.name) as container:
             container.classes("w-full")
             # ui.plotly(self.model.graph())
-            ui.plotly(self.model.sankey())
             ui.echart(self.model.egraph())
+            ui.plotly(self.model.sankey())
             ui.markdown(self.model.table())
 
 

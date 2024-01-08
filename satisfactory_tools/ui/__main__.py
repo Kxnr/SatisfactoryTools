@@ -20,15 +20,16 @@ config = ConfigParser(Path("./Docs.json")).parse_config()
 optimizer = Optimizer(config.materials, config.recipes)
 
 column = ui.column()
-column.classes = "w-full"
+column.classes("w-full")
 optimizer_view = OptimizerView(optimizer, column)
 
 with ui.header(elevated=True):
+    with ui.left_drawer(fixed=False) as left_drawer:
+        left_drawer.classes("w-1/3")
+        optimizer_view.render()
+
     ui.button(on_click=lambda: left_drawer.toggle(), icon="menu")
     ui.label("Satisfactory Planner")
-    with ui.left_drawer(fixed=False) as left_drawer:
-        left_drawer.props("width=500")
-        optimizer_view.render()
 
 print("run")
 ui.run(reload=False)

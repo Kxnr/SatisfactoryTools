@@ -102,9 +102,6 @@ def plot_process_echart(process: Process, layout=spring_layout):
     positions = layout(process.graph)
     ordered_nodes = list(process.graph.nodes)
     config = {
-        "legend": {
-            "data": ['HTMLElement', 'WebGL', 'SVG', 'CSS', 'Other']
-        },
         "series": [
             {
                 "type": 'graph',
