@@ -42,8 +42,8 @@ def plot_process(process: Process, layout=spring_layout):
                 },
                 "draggable": True,
                 "roam": True,
-                "edgeSymbol": ['arrow'],
-                "edgeSymbolSize": [8, 20],
+                "edgeSymbol": ['circle', 'arrow'],
+                "edgeSymbolSize": [0, 8],
                 "edgeLabel": {
                     "fontSize": 20
                 },

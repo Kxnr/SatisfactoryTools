@@ -14,7 +14,8 @@ pytestmark = pytest.mark.skipif(not game_config_exists(), reason="Game config no
 
 def test_ConfigParser():
     parser = ConfigParser(Path("./Docs.json"))
-    parser.parse_config()
+    config = parser.parse_config()
+    breakpoint()
 
 
 def test_simplify_config():

@@ -133,8 +133,8 @@ class Process(ProcessNode):
     _graph: nx.MultiGraph
 
     @classmethod
-    def from_nodes(cls, nodes_or_graph: Iterable[ProcessNode] | nx.MultiGraph) -> Self:
-        if isinstance(nodes_or_graph, nx.MultiGraph):
+    def from_nodes(cls, nodes_or_graph: Iterable[ProcessNode] | nx.MultiDiGraph) -> Self:
+        if isinstance(nodes_or_graph, nx.MultiDiGraph):
             _graph = nodes_or_graph
         else:
             _graph = cls._make_graph(nodes_or_graph)
@@ -150,16 +150,18 @@ class Process(ProcessNode):
 
     @staticmethod
     def _make_graph(nodes: list[ProcessNode]) -> nx.MultiGraph:
-        graph = nx.MultiGraph()
+        graph = nx.MultiDiGraph()
         graph.add_nodes_from(nodes)
-
+        
+        # TODO: resource pool nodes when there are multiple producers of the same resource
         for i, node_1 in enumerate(nodes):
             for node_2 in nodes[i:]:
                 # TODO: add cost attribute to node
-                if any(not isclose(v, 0) for _, v in node_1.output_materials | node_2.input_materials):
-                    graph.add_edge(node_1, node_2)
-                if any(not isclose(v, 0) for _, v in node_2.output_materials | node_1.input_materials):
-                    graph.add_edge(node_2, node_1)
+                for material in node_1.output_materials.keys():
+                    if material in node_1.output_materials and material in node_2.input_materials:
+                        graph.add_edge(node_1, node_2, material=material)
+                    if material in node_2.output_materials and material in node_1.input_materials:
+                        graph.add_edge(node_2, node_1, material=material)
 
         return graph
 
