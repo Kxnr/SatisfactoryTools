@@ -57,7 +57,7 @@ class OptimizationResultView(View):
         with ui.expansion(self.model.process.name) as container:
             container.classes("w-full")
             # ui.plotly(self.model.graph())
-            ui.echart(self.model.graph()).classes("aspect-square w-full")
+            ui.echart(self.model.graph()).classes("aspect-video w-full h-full")
 
             # TODO: table view, add tooltips on rows to show recipe
             table = self.model.table()
