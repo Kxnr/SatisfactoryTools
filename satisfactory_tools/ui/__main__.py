@@ -19,17 +19,21 @@ config = ConfigParser(Path("./Docs.json")).parse_config()
 # optimizer = Optimizer(materials, processes)
 optimizer = Optimizer(config.materials, config.recipes)
 
-column = ui.column()
-column.classes("w-full")
-optimizer_view = OptimizerView(optimizer, column)
 
 with ui.header(elevated=True):
-    with ui.left_drawer(fixed=False) as left_drawer:
-        left_drawer.classes("w-1/3")
-        optimizer_view.render()
-
-    ui.button(on_click=lambda: left_drawer.toggle(), icon="menu")
     ui.label("Satisfactory Planner")
+
+with ui.grid(columns=3) as row:
+    row.classes("w-full")
+    planning_column = ui.column()
+    result_column = ui.column()
+    planning_column.classes("col-span-1 border w-full")
+    result_column.classes("col-span-2 w-full")
+
+with planning_column:
+    optimizer_view = OptimizerView(optimizer, result_column)
+    optimizer_view.render()
+
 
 print("run")
 ui.run(reload=False)

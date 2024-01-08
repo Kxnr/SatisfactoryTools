@@ -1,7 +1,7 @@
 from satisfactory_tools.categorized_collection import CategorizedCollection
 from satisfactory_tools.core.process import ProcessNode, Process
 from satisfactory_tools.core.material import MaterialSpec, MaterialSpecFactory
-from satisfactory_tools.plotting import graph, sankey, tables
+from satisfactory_tools.plotting import graph, tables
 from satisfactory_tools.ui.widgets import Picker, Setter
 from typing import Iterable, Protocol, Self
 from pathlib import Path
@@ -30,14 +30,8 @@ class OptimizationResult:
     def graph(self):
         return graph.plot_process(self.process)
 
-    def egraph(self):
-        return graph.plot_process_echart(self.process)
-
-    def sankey(self):
-        return sankey.plot_process(self.process)
-
     def table(self):
-        return tables.recipe_summary(self.process)
+        return tables.production_summary(self.process)
 
     def summary(self):
         return (

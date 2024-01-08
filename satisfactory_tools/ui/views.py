@@ -57,9 +57,17 @@ class OptimizationResultView(View):
         with ui.expansion(self.model.process.name) as container:
             container.classes("w-full")
             # ui.plotly(self.model.graph())
-            ui.echart(self.model.egraph())
-            ui.plotly(self.model.sankey())
-            ui.markdown(self.model.table())
+            ui.echart(self.model.graph()).classes("aspect-square w-full")
+
+            # TODO: table view, add tooltips on rows to show recipe
+            table = self.model.table()
+            columns = [{"name": label, "label": label, "field": label, "required": True} for label in table.column_headers]
+            rows = [
+                {k: v.replace("\n", "<br/>") for k, v in zip(table.column_headers, row)}
+                for row in table.rows
+            ]
+
+            ui.table(columns=columns, rows=rows)
 
 
 class OptimizerView(View):
@@ -69,28 +77,21 @@ class OptimizerView(View):
 
     def render(self):
         # TODO: set name
-        with ui.stepper().props("vertical") as stepper:
-            with ui.step("Target Output") as step:
-                SetterView(self.model.output_setter).render()
-                ui.button("Apply", on_click=stepper.next)
-            with ui.step("Input Constraints") as stp:
-                SetterView(self.model.input_setter).render()
-                with ui.row():
-                    ui.button("Skip", on_click=lambda: (stepper.next(), self.model.clear_input()))
-                    # TODO: re-set constraints if previously skipped
-                    ui.button("Apply", on_click=lambda: (stepper.next(), self.model.set_input()))
-                    ui.button("Previous", on_click=stepper.previous)
-            with ui.step("Available Recipes") as step:
-                PickerView(self.model.process_picker).render()
-                with ui.row():
-                    ui.button("Apply", on_click=stepper.next)
-                    ui.button("Previous", on_click=stepper.previous)
-            with ui.step("Optimize") as step:
-                with ui.row():
-                    # TODO: more description
-                    # TODO: render optimization result
-                    ui.input("name")
-                    ui.button("Maximize output", on_click=partial(self.run_and_render, self.model.optimize_output, OptimizationResultView, self.output_element))
-                    ui.button("Minimize input", on_click=partial(self.run_and_render, self.model.optimize_input, OptimizationResultView, self.output_element))
-                    ui.button("Previous", on_click=stepper.previous)
+        with ui.expansion("Target Output") as ex:
+            ex.classes("w-full")
+            SetterView(self.model.output_setter).render()
+        with ui.expansion("Input Constraints") as ex:
+            ex.classes("w-full")
+            SetterView(self.model.input_setter).render()
+            with ui.row():
+                ui.button("Skip", on_click=self.model.clear_input)
+                # TODO: re-set constraints if previously skipped
+                ui.button("Apply", on_click=self.model.set_input)
+        with ui.expansion("Available Recipes") as ex:
+            ex.classes("w-full")
+            PickerView(self.model.process_picker).render()
+        ui.input("name")
+        with ui.row():
+            ui.button("Maximize output", on_click=partial(self.run_and_render, self.model.optimize_output, OptimizationResultView, self.output_element))
+            ui.button("Minimize input", on_click=partial(self.run_and_render, self.model.optimize_input, OptimizationResultView, self.output_element))
 

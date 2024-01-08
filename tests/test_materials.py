@@ -134,4 +134,14 @@ def test_materials_thresholding():
     assert greater_equal["e"] == 5
     assert greater_equal["f"] == 6
 
+def test_materials_in():
+    mats = Materials(a=1, b=2, c=3, d=4, e=5, f=6)
 
+    assert "a" in mats
+    assert "b" in mats
+    assert "c" in mats
+    assert "d" in mats
+    assert "e" in mats
+    assert "f" in mats
+    assert "g" not in mats
+    assert "h" not in mats

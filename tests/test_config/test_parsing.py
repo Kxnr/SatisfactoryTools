@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from satisfactory_tools.config import ConfigParser
+from satisfactory_tools.config.parser import ConfigParser
 import json
 
 

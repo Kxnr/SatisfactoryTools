@@ -1,41 +1,33 @@
 from textwrap import dedent
+from dataclasses import dataclass, field
 
 import plotly.graph_objects as go
 from satisfactory_tools.core.process import Process
 
 
-def make_row(values: list[str]):
-    return "<tr>" + "".join([f"<td>{v}</td>" for v in values]) + "</tr>"
+@dataclass
+class Table:
+    column_headers: list[str] = field(default_factory=list)
+    row_headers: list[str] = field(default_factory=list)
+    rows: list[list[str]] = field(default_factory=list)
 
-def make_table(headers: list[str], values: list[list[str]]):
-    header = make_row(headers)
-    rows = "\n".join([make_row(row) for row in values])
 
-    return dedent(f"""
-    <table>
-    <thead>
-    {header}
-    </thead>
-    <tbody>
-    {rows}
-    </tbody>
-    </table>""")
-
-def recipe_summary(process: Process):
+def production_summary(process: Process) -> Table:
     headers = ["Machine Type", "Count", "Recipe", "Ingredients", "Products"]
     rows = []
     for node in process.graph.nodes:
         # FIXME: using contains here is weird--Material should just support getting non-zero elements
-        rows.append([node.name,
+        rows.append([node.machine.display_name,
                      f"{node.scale:.2f}",
                      node.name,
-                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.input_materials if name in node.input_materials]),
-                     "<br>".join([f"{name}: {value * node.scale:.2f}" for name, value in node.output_materials if name in node.output_materials]),
-                         ])
+                     "\n".join([f"{name}: {value:.2f}" for name, value in node.scaled_input if name in node.scaled_input]),
+                     "\n".join([f"{name}: {value:.2f}" for name, value in node.scaled_output if name in node.scaled_output]),
+                    ])
 
-    # transpose row to column major order
-    go.Table(header=dict(values=headers), cells=dict(values=list(map(list, zip(*rows)))))
+    return Table(column_headers=headers, rows=rows)
 
-    return make_table(headers, rows)
 
+def net_summary(process: Process) -> Table:
+    # TODO
+    ...
 

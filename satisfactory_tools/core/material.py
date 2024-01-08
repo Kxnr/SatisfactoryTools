@@ -45,6 +45,12 @@ class HashableDict(RootModel[dict[str, float]]):
 
         return type(self)(**(self.root | other))
 
+    def __contains__(self, name: str):
+        return name in self.root
+
+    def get(self, name: str, default: Any = None):
+        return self.root.get(name, default)
+
 
 class MaterialSpec(BaseModel, _SignalClass, frozen=True):
     material_values: HashableDict = Field(default_factory=HashableDict)

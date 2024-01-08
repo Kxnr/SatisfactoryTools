@@ -73,8 +73,8 @@ class ConfigParser:
             for resource in extractor.resources:
                 # TODO: cycle time
                 output_materials = self.dict_to_material_spec({resource: extractor.items_per_cycle}, material_class)
-                name = " ".join([extractor.display_name, self.lookup_material(resource).display_name])
-                result[name] = ProcessNode(name=extractor.display_name,
+                resource_name = self.lookup_material(resource).display_name
+                result[resource_name] = ProcessNode(name=resource_name,
                                                    input_materials=material_class.empty(),
                                                    output_materials=output_materials,
                                                    power_production=extractor.power_production,
@@ -96,11 +96,9 @@ class ConfigParser:
 
         if isinstance(node.machine, ExtractorData):
             tags.add("extractor")
-
-        if isinstance(node.machine, GeneratorData):
+        elif isinstance(node.machine, GeneratorData):
             tags.add("generator")
-
-        if isinstance(node.machine, MachineData):
+        elif isinstance(node.machine, MachineData):
             tags.add(node.machine.display_name.lower())
 
         if "alternate" in node.name.lower():
