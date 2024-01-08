@@ -3,7 +3,7 @@ from satisfactory_tools.core.process import ProcessNode, Process
 from satisfactory_tools.core.material import MaterialSpec, MaterialSpecFactory
 from satisfactory_tools.plotting import graph, tables
 from satisfactory_tools.ui.widgets import Picker, Setter
-from typing import Iterable, Protocol, Self
+from typing import Iterable, Protocol, Self, Any
 from pathlib import Path
 import json
 from abc import abstractmethod
@@ -27,18 +27,21 @@ class OptimizationResult:
         with path.open() as f:
             return Process(**json.load(f))
 
-    def graph(self):
+    def graph(self) -> dict[str, Any]:
         return graph.plot_process(self.process)
 
-    def table(self):
+    def material_table(self) -> tables.Table:
         return tables.production_summary(self.process)
 
-    def summary(self):
-        return (
-            f"Total Process Nodes: {len(self.process.internal_nodes)}"
-            f"Total Power Production: {sum(node.power_production * node.scale for node in self.process.internal_nodes)}\n"
-            f"Total Power Consumption: {sum(node.consumption * node.scale for node in self.process.internal_nodes)}\n"
-        )
+    def machines_table(self) -> tables.Table:
+        return tables.machines_summary(self.process)
+
+    def per_machine_tables(self) -> dict[str, tables.Table]:
+        result: dict[str, tables.Table] = {}
+        for node in self.process.internal_nodes:
+            result[node.name] = tables.production_summary(node)
+
+        return result
 
 
 class Optimizer:

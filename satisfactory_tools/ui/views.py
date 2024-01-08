@@ -1,6 +1,7 @@
 from typing import Protocol, Callable, Self
 from abc import abstractmethod
 from satisfactory_tools.ui.models import Optimizer, OptimizationResult
+from satisfactory_tools.plotting.tables import Table
 from satisfactory_tools.ui.widgets import Setter, Picker 
 from nicegui.element import Element
 from nicegui import ui, run
@@ -21,6 +22,7 @@ class View(Protocol):
 
         with (render_context or nullcontext()):
             result_view(result).render()
+
 
 class PickerView(View):
     def __init__(self, model: Picker):
@@ -59,15 +61,19 @@ class OptimizationResultView(View):
             # ui.plotly(self.model.graph())
             ui.echart(self.model.graph()).classes("aspect-video w-full h-full")
 
-            # TODO: table view, add tooltips on rows to show recipe
-            table = self.model.table()
+            self._render_table(self.model.material_table())
+            self._render_table(self.model.machines_table())
+
+    @staticmethod
+    def _render_table(table: Table) -> None:
             columns = [{"name": label, "label": label, "field": label, "required": True} for label in table.column_headers]
             rows = [
-                {k: v.replace("\n", "<br/>") for k, v in zip(table.column_headers, row)}
+                {k: v for k, v in zip(table.column_headers, row)}
                 for row in table.rows
             ]
 
             ui.table(columns=columns, rows=rows)
+
 
 
 class OptimizerView(View):

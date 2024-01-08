@@ -2,6 +2,7 @@ import itertools
 import math
 from textwrap import dedent
 from more_itertools import bucket
+import pprint
 
 import plotly.graph_objects as go
 from networkx.drawing import spring_layout
@@ -16,6 +17,7 @@ def plot_process(process: Process, layout=spring_layout):
     def scale_value(value: float, pre_scale: float=.1) -> float:
         return (((value*pre_scale) + 1)**2) * 10
 
+    max_scale = max((node.scale for node in process.internal_nodes))
 
     positions = layout(process.graph)
     categories = [{"name": machine.display_name} for machine in {node.machine for node in process.graph.nodes}]
@@ -51,7 +53,7 @@ def plot_process(process: Process, layout=spring_layout):
                      "y": scale_coordinate(positions[node][1]),
                      "category": category_indices[node.machine.display_name],
                      "value": f"{node.scale:.2f}",
-                     "symbolSize": scale_value(node.scale)
+                     "symbolSize": scale_value(node.scale, pre_scale=1/max_scale)
                      }
                      for node in process.graph.nodes
                 ],
@@ -62,11 +64,6 @@ def plot_process(process: Process, layout=spring_layout):
                      "target": edge[1].name}
                     for edge in process.graph.edges()
                 ],
-                "lineStyle": {
-                    "opacity": 0.9,
-                    "width": 2,
-                    "curveness": 0
-                },
                 "itemStyle": {},
                 "emphasis": {
                     "focus": 'adjacency',
@@ -79,4 +76,5 @@ def plot_process(process: Process, layout=spring_layout):
             }
         ]
     }
+    pprint.pprint(config)
     return config

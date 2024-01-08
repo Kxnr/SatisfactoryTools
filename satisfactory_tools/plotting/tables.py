@@ -1,8 +1,7 @@
 from textwrap import dedent
 from dataclasses import dataclass, field
 
-import plotly.graph_objects as go
-from satisfactory_tools.core.process import Process
+from satisfactory_tools.core.process import Process, ProcessNode
 
 
 @dataclass
@@ -12,22 +11,37 @@ class Table:
     rows: list[list[str]] = field(default_factory=list)
 
 
-def production_summary(process: Process) -> Table:
-    headers = ["Machine Type", "Count", "Recipe", "Ingredients", "Products"]
+def production_summary(process: ProcessNode) -> Table:
+
+    total_production = sum((node.scaled_input for node in process.internal_nodes), process.scaled_input.empty())
+    total_consumption = sum((node.scaled_output for node in process.internal_nodes), process.scaled_output.empty())
+    net_production = process.scaled_output - process.scaled_input
+
+    headers = ["Material", "Total Production", "Total Consumption", "Net Production"]
     rows = []
-    for node in process.graph.nodes:
-        # FIXME: using contains here is weird--Material should just support getting non-zero elements
-        rows.append([node.machine.display_name,
-                     f"{node.scale:.2f}",
-                     node.name,
-                     "\n".join([f"{name}: {value:.2f}" for name, value in node.scaled_input if name in node.scaled_input]),
-                     "\n".join([f"{name}: {value:.2f}" for name, value in node.scaled_output if name in node.scaled_output]),
-                    ])
+    for material in total_production.keys():
+        if material not in total_production and material not in total_consumption:
+            continue
+        rows.append([
+            material,
+            f"{total_production[material]:.2f}",
+            f"{total_consumption[material]:.2f}",
+            f"{net_production[material]:.2f}",
+        ])
 
     return Table(column_headers=headers, rows=rows)
 
 
-def net_summary(process: Process) -> Table:
-    # TODO
-    ...
+
+def machines_summary(process: Process) -> Table:
+    headers = ["Recipe", "Count", "Machine Type", "Power Production", "Power Consumption"]
+    rows = []
+    for node in process.graph.nodes:
+        rows.append([node.name,
+                     f"{node.scale:.2f}",
+                     node.machine.display_name,
+                     f"{node.power_production * node.scale:.2f}",
+                     f"{node.power_consumption * node.scale:.2f}",
+                    ])
+    return Table(column_headers=headers, rows=rows)
 
