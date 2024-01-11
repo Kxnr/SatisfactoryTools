@@ -1,21 +1,23 @@
 import satisfactory_tools.core.process as module
 from tests import Materials
 from math import isclose
+from satisfactory_tools.config.standardization import ConfigData
 
+CONFIG = ConfigData(display_name="test", class_name="test")
 
 def test_process_node():
     inputs = Materials(a=2, b=4)
     outputs = Materials(c=2, d=4)
 
-    module.ProcessNode(name="Test", input_materials=inputs, output_materials=outputs, power_production=0, power_consumption=0)
+    module.ProcessNode(name="Test", input_materials=inputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
 
 def test_process_node_shift():
     inputs = Materials(a=2, b=4)
     midputs = Materials(e=4, f=7)
     outputs = Materials(c=2, d=4)
 
-    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0)
-    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0)
+    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
+    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
 
     assert inputs >> first == midputs
     assert inputs >> first >> second == outputs
@@ -31,9 +33,9 @@ def test_simple_optimization_minimize_input():
     midputs = Materials(e=4, f=7)
     outputs = Materials(c=2, d=4)
 
-    source = module.ProcessNode(name="source", input_materials=Materials(), output_materials=inputs, power_production=0, power_consumption=0)
-    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0)
-    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0)
+    source = module.ProcessNode(name="source", input_materials=Materials(), output_materials=inputs, power_production=0, power_consumption=0, machine=CONFIG)
+    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
+    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
 
     optimal = module.Process.minimize_input(4*outputs, [source, first, second], include_power=False)
 
@@ -50,11 +52,11 @@ def test_optimization_extraneous_recipes_minimize_input():
 
     extraneous = Materials(g=1, h=9)
 
-    source = module.ProcessNode(name="source", input_materials=Materials(), output_materials=inputs, power_production=0, power_consumption=0)
-    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0)
-    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0)
-    third = module.ProcessNode(name="third", input_materials=inputs, output_materials=extraneous, power_production=0, power_consumption=0)
-    fourth = module.ProcessNode(name="fourth", input_materials=extraneous, output_materials=midputs, power_production=0, power_consumption=0)
+    source = module.ProcessNode(name="source", input_materials=Materials(), output_materials=inputs, power_production=0, power_consumption=0, machine=CONFIG)
+    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
+    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
+    third = module.ProcessNode(name="third", input_materials=inputs, output_materials=extraneous, power_production=0, power_consumption=0, machine=CONFIG)
+    fourth = module.ProcessNode(name="fourth", input_materials=extraneous, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
 
     optimal = module.Process.minimize_input(4*outputs, [source, first, second, third, fourth], include_power=False)
 
@@ -71,12 +73,12 @@ def test_optimization_loop_available_minimize_input():
 
     extraneous = Materials(g=1, h=9)
 
-    source = module.ProcessNode(name="source", input_materials=Materials(), output_materials=inputs, power_production=0, power_consumption=0)
-    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0)
-    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0)
+    source = module.ProcessNode(name="source", input_materials=Materials(), output_materials=inputs, power_production=0, power_consumption=0, machine=CONFIG)
+    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
+    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
 
-    loop_1 = module.ProcessNode(name="loop_1", input_materials=outputs, output_materials=extraneous, power_production=0, power_consumption=0)
-    loop_2 = module.ProcessNode(name="loop_2", input_materials=extraneous, output_materials=inputs, power_production=0, power_consumption=0)
+    loop_1 = module.ProcessNode(name="loop_1", input_materials=outputs, output_materials=extraneous, power_production=0, power_consumption=0, machine=CONFIG)
+    loop_2 = module.ProcessNode(name="loop_2", input_materials=extraneous, output_materials=inputs, power_production=0, power_consumption=0, machine=CONFIG)
 
     optimal = module.Process.minimize_input(4*outputs, [source, first, second, loop_1, loop_2], include_power=False)
 
@@ -91,8 +93,8 @@ def test_optimization_simple_maximize_output():
     midputs = Materials(e=4, f=7)
     outputs = Materials(c=2, d=4)
 
-    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0)
-    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0)
+    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
+    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
 
     optimal = module.Process.maximize_output(4*inputs, outputs, [first, second], include_power=False)
 
@@ -109,10 +111,10 @@ def test_optimization_extraneous_recipes_maximize_output():
 
     extraneous = Materials(g=1, h=9)
 
-    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0)
-    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0)
-    third = module.ProcessNode(name="third", input_materials=inputs, output_materials=extraneous, power_production=0, power_consumption=0)
-    fourth = module.ProcessNode(name="fourth", input_materials=extraneous, output_materials=midputs, power_production=0, power_consumption=0)
+    first = module.ProcessNode(name="first", input_materials=inputs, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
+    second = module.ProcessNode(name="second", input_materials=midputs, output_materials=outputs, power_production=0, power_consumption=0, machine=CONFIG)
+    third = module.ProcessNode(name="third", input_materials=inputs, output_materials=extraneous, power_production=0, power_consumption=0, machine=CONFIG)
+    fourth = module.ProcessNode(name="fourth", input_materials=extraneous, output_materials=midputs, power_production=0, power_consumption=0, machine=CONFIG)
 
     optimal = module.Process.maximize_output(4*inputs, outputs, [first, second, third, fourth], include_power=False)
 

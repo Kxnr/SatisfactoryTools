@@ -43,5 +43,5 @@ def machines_summary(process: Process) -> Table:
                      f"{node.power_production * node.scale:.2f}",
                      f"{node.power_consumption * node.scale:.2f}",
                     ])
-    return Table(column_headers=headers, rows=rows)
 
+    return Table(column_headers=headers, rows=rows)

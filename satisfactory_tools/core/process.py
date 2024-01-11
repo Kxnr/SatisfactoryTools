@@ -2,6 +2,8 @@ from dataclasses import dataclass, fields, replace
 from functools import singledispatchmethod
 from typing import Any, Iterable
 from math import isclose
+from collections import defaultdict
+from more_itertools import distinct_combinations
 
 import networkx as nx
 import numpy as np
@@ -11,7 +13,7 @@ from typing_extensions import Self
 from itertools import chain
 
 from satisfactory_tools.core.material import MaterialSpec
-from satisfactory_tools.config.machines import MachineData
+from satisfactory_tools.config.standardization import ConfigData
 
 
 class SolutionFailedException(Exception):
@@ -24,16 +26,15 @@ class _SignalClass(BaseModel):
 
 class ProcessNode(_SignalClass):
     model_config = ConfigDict(frozen=True)
-    name: str  # TODO: use an enum of node types, rather than names, to make plotting easier
+    name: str
     input_materials: MaterialSpec
     output_materials: MaterialSpec
     power_production: float
     power_consumption: float
-    # internal_nodes: set[Self] = Field(default_factory=set)
+    machine: ConfigData
     internal_nodes: frozenset["ProcessNode"] = Field(default_factory=frozenset)
     scale: float = 1
 
-    machine: MachineData | None = None
 
     @classmethod
     def from_nodes(cls, *nodes: Self, name: str="Composite") -> Self:
@@ -43,13 +44,19 @@ class ProcessNode(_SignalClass):
         sum_inputs = sum((node.scaled_input for node in nodes), empty)
         sum_outputs = sum((node.scaled_output for node in nodes), empty)
 
-        net_inputs = (sum_inputs - (sum_outputs | sum_inputs)) > 0
-        net_outputs = (sum_outputs - (sum_inputs | sum_outputs)) > 0
-
+        net_inputs = (sum_inputs - sum_outputs) > 0
+        net_outputs = (sum_outputs - sum_inputs) > 0
         power_production = sum(node.power_production * node.scale for node in nodes)
+
         power_consumption = sum(node.power_consumption * node.scale for node in nodes)
 
-        return cls(name=name, input_materials=net_inputs, output_materials=net_outputs,power_production=power_production, power_consumption=power_consumption, internal_nodes=frozenset(nodes))
+        return cls(name=name, 
+                   input_materials=net_inputs, 
+                   output_materials=net_outputs,
+                   power_production=power_production,
+                   power_consumption=power_consumption,
+                   machine=ConfigData(display_name=name, class_name=""),
+                   internal_nodes=frozenset(nodes))
 
     def __repr__(self) -> str:
         ingredients = " ".join(repr(self.scaled_input).splitlines())
@@ -126,6 +133,7 @@ class ProcessNode(_SignalClass):
 
 ProcessNode.update_forward_refs()
 
+
 class Process(ProcessNode):
     """
     Store graph of nodes defining process.
@@ -145,35 +153,56 @@ class Process(ProcessNode):
 
     @classmethod
     def _filter_eligible_nodes(cls, output_node: ProcessNode, available_nodes: list[ProcessNode]) -> list[ProcessNode]:
-        graph = cls._make_graph([output_node] + available_nodes)
+        graph = cls._make_graph([output_node] + available_nodes, make_pool_nodes=False)
         return list(nx.ancestors(graph, output_node) | {output_node})
 
     @staticmethod
-    def _make_graph(nodes: list[ProcessNode]) -> nx.MultiGraph:
+    def _make_graph(nodes: list[ProcessNode], make_pool_nodes: bool = True) -> nx.MultiGraph:
         graph = nx.MultiDiGraph()
         graph.add_nodes_from(nodes)
+
+        def join_nodes(a: ProcessNode, b: ProcessNode, material: str):
+            if material in b.output_materials and material in a.input_materials:
+                graph.add_edge(b, a, material=material)
+
+            if material in a.output_materials and material in b.input_materials:
+                graph.add_edge(a, b, material=material)
+
+        adjacency_dict = defaultdict(list)
+        for node in nodes:
+            material_requirements = node.input_materials | node.output_materials
+            for material in material_requirements.keys():
+                if material in material_requirements:
+                    adjacency_dict[material].append(node)
         
-        # TODO: resource pool nodes when there are multiple producers of the same resource
-        for i, node_1 in enumerate(nodes):
-            for node_2 in nodes[i:]:
-                # TODO: add cost attribute to node
-                for material in node_1.output_materials.keys():
-                    if material in node_1.output_materials and material in node_2.input_materials:
-                        graph.add_edge(node_1, node_2, material=material)
-                    if material in node_2.output_materials and material in node_1.input_materials:
-                        graph.add_edge(node_2, node_1, material=material)
+        for material, nodes in adjacency_dict.items():
+            if len(nodes) > 2 and make_pool_nodes:
+                # make a pool node for this resource, so that we don't connect every machine that
+                # has a byproduct to every other machine that uses that material
+                # FIXME: material spec ergonomics
+                input_count = sum((node.input_materials[material] for node in nodes))
+                output_count = sum((node.output_materials[material] for node in nodes))
+                input_materials = nodes[0].input_materials.empty({material: input_count})
+                output_materials = nodes[0].input_materials.empty({material: output_count})
+
+                pool_node = ProcessNode(name=material, input_materials=input_materials, output_materials=output_materials, power_production=0, power_consumption=0, machine=ConfigDict(display_name=material, class_name=""))
+                for node in nodes:
+                    join_nodes(node, pool_node, material)
+            else:
+                for a, b in distinct_combinations(nodes, 2):
+                    join_nodes(a, b, material)
 
         return graph
 
     @classmethod
-    def minimize_input(cls, target_output: MaterialSpec, process_nodes: list[ProcessNode],include_power=False, name="Result") -> Self:
+    def minimize_input(cls, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False, name="Result") -> Self:
         """
         Find the weights on process nodes that produce the desired output with the least input and
         process cost.
         
         # TODO: availability constraints
         """
-        output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output, power_production=0, power_consumption=0)
+        output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output, power_production=0, power_consumption=0, machine=ConfigData(display_name="Output", class_name=""))
 
         connected_nodes = cls._filter_eligible_nodes(output, process_nodes)
         costs = [1 for _ in connected_nodes]  # TODO: cost per recipe
@@ -208,7 +237,7 @@ class Process(ProcessNode):
         cost is modelled.
         """
         # sinks node for output, mirror to minimize input requiring source nodes for ingredients
-        output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output.empty(), power_production=0, power_consumption=0)
+        output = ProcessNode(name="Output", input_materials=target_output, output_materials=target_output.empty(), power_production=0, power_consumption=0, machine=ConfigData(display_name="Output", class_name=""))
 
         visited = cls._filter_eligible_nodes(output, process_nodes)
 

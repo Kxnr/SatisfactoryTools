@@ -55,8 +55,9 @@ class HashableDict(RootModel[dict[str, float]]):
 class MaterialSpec(BaseModel, _SignalClass, frozen=True):
     material_values: HashableDict = Field(default_factory=HashableDict)
 
-    def empty(self) -> Self:
-        return type(self)(material_values={key: 0 for key in self.keys()})
+    def empty(self, values: dict[str, float] | None = None) -> Self:
+        values = values or {}
+        return type(self)(material_values={key: values.get(key, 0) for key in self.keys()})
 
     def _copy_and_update(self, new_values: dict[str, float]) -> Self:
         return type(self)(material_values=self.empty().material_values | new_values)
@@ -173,12 +174,25 @@ class MaterialSpec(BaseModel, _SignalClass, frozen=True):
     def keys(self):
         yield from self.material_values.keys()
 
+    def __and__(self, other: Self) -> Self:
+        if not isinstance(other, MaterialSpec):
+            return NotImplemented
+
+        def test(a: float, b: float) -> bool:
+            return (not isclose(a, 0)) and (not isclose(b, 0))
+
+        return type(self)(
+            material_values={name: max(value, matched_value) if test(value, matched_value) else 0 for (name, value), (_, matched_value) in zip(self, other)})
+
     def __or__(self, other: Self) -> Self:
         if not isinstance(other, MaterialSpec):
             return NotImplemented
 
+        def test(a: float, b: float) -> bool:
+            return (not isclose(a, 0)) or (not isclose(b, 0))
+
         return type(self)(
-            material_values={name: value if not isclose(matched_value, 0) else 0 for (name, value), (_, matched_value) in zip(self, other)})
+            material_values={name: max(value, matched_value) if test(value, matched_value) else 0 for (name, value), (_, matched_value) in zip(self, other)})
 
     def __getitem__(self, item: str) -> Number:
         return self.material_values[item]
@@ -202,4 +216,3 @@ class MaterialSpecFactory:
 
     def keys(self):
         yield from self.initial_values.keys()
-
