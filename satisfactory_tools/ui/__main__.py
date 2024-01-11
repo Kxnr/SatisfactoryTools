@@ -24,9 +24,10 @@ with ui.header(elevated=True):
     ui.label("Satisfactory Planner")
 
 with ui.grid(columns=3) as row:
+    # TODO: move back to collapsible left drawer
     row.classes("w-full")
     planning_column = ui.column()
-    result_column = ui.column()
+    result_column = ui.column().classes("flex-col-reverse")
     planning_column.classes("col-span-1 border w-full")
     result_column.classes("col-span-2 w-full")
 
