@@ -10,15 +10,17 @@ from typing import Iterable
 class Picker:
     default_visibility = True
 
-    def __init__(self, elements: CategorizedCollection[str, ...]):
+    def __init__(self, elements: CategorizedCollection[str, ...], default_state: bool = False):
         self.elements = elements
-        self._selected = {key: False for key in self.elements.keys()}
+        self.default_state = default_state
+        self._selected = {key: self.default_state for key in self.elements.keys()}
         self._selector_visibility = {key: self.default_visibility for key in self.elements.keys()}
 
         self._category_visibility = {key: self.default_visibility for key in self.elements.keys()}
         self._category_counters = {key: 0 for key in self.elements.keys()}
 
     def clear(self):
+        # TODO
         pass
 
     def render_category_selectors(self, ui: ui) -> None:
@@ -91,12 +93,14 @@ class Picker:
 class Setter:
     default_visibility = False
 
-    def __init__(self, elements: Iterable[str]):
+    def __init__(self, elements: Iterable[str], default_state: bool = False):
         self.elements = elements
-        self._selected = {key: False for key in self.elements}
+        self.default_state = default_state
+        self._selected = {key: self.default_state for key in self.elements}
         self._values = {key: 0 for key in self.elements}
 
     def clear(self):
+        # TODO
         pass
 
     def render_search_box(self, ui: ui) -> None:

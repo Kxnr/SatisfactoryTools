@@ -45,11 +45,10 @@ class SetterView(View):
         self.model = model
 
     def render(self):
-        self.model.render_search_box(ui)
-
         with ui.column():
             self.model.render_setters(ui)
 
+        self.model.render_search_box(ui)
 
 class OptimizationResultView(View):
     def __init__(self, model: OptimizationResult):
@@ -99,7 +98,7 @@ class OptimizerView(View):
             ex.classes("w-full")
             SetterView(self.model.input_setter).render()
             with ui.row():
-                ui.button("Skip", on_click=self.model.clear_input)
+                ui.button("Clear", on_click=self.model.clear_input)
                 # TODO: re-set constraints if previously skipped
                 ui.button("Apply", on_click=self.model.set_input)
         with ui.expansion("Available Recipes") as ex:

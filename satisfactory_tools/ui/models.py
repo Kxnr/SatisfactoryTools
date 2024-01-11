@@ -53,7 +53,7 @@ class Optimizer:
 
         self.output_setter: Setter = Setter(list(self._materials.keys()))
         self.input_setter: Setter = Setter(list(self._materials.keys()))
-        self.process_picker: Picker = Picker(available_processes)
+        self.process_picker: Picker = Picker(available_processes, default_state=True)
 
         self.name = "Result"
 

@@ -183,9 +183,10 @@ class Process(ProcessNode):
                 input_count = sum((node.input_materials[material] for node in nodes))
                 output_count = sum((node.output_materials[material] for node in nodes))
                 input_materials = nodes[0].input_materials.empty({material: input_count})
-                output_materials = nodes[0].input_materials.empty({material: output_count})
+                output_materials = nodes[0].output_materials.empty({material: output_count})
+                name = f"{material} Pool"
 
-                pool_node = ProcessNode(name=material, input_materials=input_materials, output_materials=output_materials, power_production=0, power_consumption=0, machine=ConfigDict(display_name=material, class_name=""))
+                pool_node = ProcessNode(name=name, input_materials=input_materials, output_materials=output_materials, power_production=0, power_consumption=0, machine=ConfigDict(display_name=name, class_name=""))
                 for node in nodes:
                     join_nodes(node, pool_node, material)
             else:
