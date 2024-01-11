@@ -23,9 +23,8 @@ class Config:
 
 
 class ConfigParser:
-    def __init__(self, config_path: Path, user_dir: Path | None = None, encoding="utf-16"):
+    def __init__(self, config_path: Path, encoding="utf-16"):
         self.config_path = config_path
-        self.user_dir = user_dir
 
         with config_path.open(encoding=encoding) as f:
             config_data = self._simplify_config(json.load(f))
@@ -136,15 +135,4 @@ class ConfigParser:
         except KeyError:
             # FIXME: custom exception
             raise Exception("Recipe requires excluded material or produces excluded product.")
-
-    def parse_user_dir(self) -> CategorizedCollection[str, Process]:
-        # load saved user ProcessNodes
-        result: CategorizedCollection[str, Process] = CategorizedCollection()
-        if self.user_dir and self.user_dir.exists():
-            for file in self.user_dir.iterdir():
-                process = Process(**json.loads(file.read_text()))
-                result[process.name] = process
-                result.set_tag(process.name, CUSTOM_TAG)
-
-        return result
 
