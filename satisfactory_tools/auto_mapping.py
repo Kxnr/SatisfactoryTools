@@ -1,5 +1,4 @@
-from typing import Generic, TypeVar, Iterable, Any, get_args
-from collections.abc import Mapping
+from typing import Any, Generic, Iterable, TypeVar
 
 T = TypeVar("T")
 S = TypeVar("S")

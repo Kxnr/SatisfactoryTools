@@ -1,9 +1,8 @@
 import itertools
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import Enum
 
 from satisfactory_tools.config.standardization import ConfigData
-from satisfactory_tools.core.material import MaterialSpec
 
 RESOURCE_KEYS = ("FGItemDescriptor",
                  "FGResourceDescriptor",

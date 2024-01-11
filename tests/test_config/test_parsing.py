@@ -1,7 +1,9 @@
-import pytest
-from pathlib import Path
-from satisfactory_tools.config.parser import ConfigParser
 import json
+from pathlib import Path
+
+import pytest
+
+from satisfactory_tools.config.parser import ConfigParser
 
 
 def game_config_exists(game_config_path: str | Path="./Docs.json") -> bool:

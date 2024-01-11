@@ -1,6 +1,6 @@
-from satisfactory_tools.core.process import ProcessNode
 from satisfactory_tools.config.standardization import ConfigData
-from tests import Materials, MATERIAL_NAMES
+from satisfactory_tools.core.process import ProcessNode
+from tests import MATERIAL_NAMES, Materials
 
 _MATERIAL_FRACTION = len(MATERIAL_NAMES) // 4
 _SUBSET = _MATERIAL_FRACTION // 2

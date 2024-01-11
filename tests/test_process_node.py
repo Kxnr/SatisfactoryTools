@@ -1,7 +1,8 @@
-import satisfactory_tools.core.process as module
-from tests import Materials
 from math import isclose
+
+import satisfactory_tools.core.process as module
 from satisfactory_tools.config.standardization import ConfigData
+from tests import Materials
 
 CONFIG = ConfigData(display_name="test", class_name="test")
 

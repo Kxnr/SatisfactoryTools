@@ -1,4 +1,3 @@
-from textwrap import dedent
 from dataclasses import dataclass, field
 
 from satisfactory_tools.core.process import Process, ProcessNode
@@ -13,11 +12,11 @@ class Table:
     def __repr__(self):
         a = ", ".join(self.column_headers)
         b = ", ".join(self.row_headers)
-        c = ""
+        c = []
         for row in self.rows:
-            c += ", ".join(row)
+            c.append(", ".join(row))
 
-        return f"{a}\n{b}\n{c}"
+        return "\n".join((a, b, *c))
 
 
 def production_summary(process: ProcessNode) -> Table:

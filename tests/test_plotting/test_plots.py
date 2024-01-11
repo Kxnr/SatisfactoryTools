@@ -1,8 +1,9 @@
 import pytest
-from tests import Materials
-from satisfactory_tools.core.process import ProcessNode, Process
+
 import satisfactory_tools.plotting.graph as graph_module
 from satisfactory_tools.config.standardization import ConfigData
+from satisfactory_tools.core.process import Process, ProcessNode
+from tests import Materials
 
 CONFIG = ConfigData(display_name="test", class_name="test")
 

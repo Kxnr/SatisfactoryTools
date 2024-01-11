@@ -1,19 +1,17 @@
-from dataclasses import dataclass, fields, replace
-from functools import singledispatchmethod
-from typing import Any, Iterable
-from math import isclose
 from collections import defaultdict
-from more_itertools import distinct_combinations
+from functools import singledispatchmethod
+from math import isclose
+from typing import Any, Iterable
 
 import networkx as nx
 import numpy as np
+from more_itertools import distinct_combinations
 from pydantic import BaseModel, ConfigDict, Field
 from scipy.optimize import linprog
 from typing_extensions import Self
-from itertools import chain
 
-from satisfactory_tools.core.material import MaterialSpec
 from satisfactory_tools.config.standardization import ConfigData
+from satisfactory_tools.core.material import MaterialSpec
 
 
 class SolutionFailedException(Exception):
@@ -227,7 +225,7 @@ class Process(ProcessNode):
 
         # TODO: remove output node from solution
         # TODO: remove source node from solution
-        return cls.from_nodes([node * scale for node, scale in zip(connected_nodes, solution.x) if not isclose(scale, 0) and node in process_nodes])
+        return cls.from_nodes([node * scale for node, scale in zip(connected_nodes, solution.x) if not isclose(scale, 0) and node in process_nodes], name=name)
 
     @classmethod
     def maximize_output(cls, available_materials: MaterialSpec, target_output: MaterialSpec, process_nodes: list[ProcessNode], include_power=False, name="Result") -> Self:
@@ -267,7 +265,7 @@ class Process(ProcessNode):
 
         # TODO: remove sink node from solution
         # TODO: remove source node from solution
-        return cls.from_nodes([node * scale for node, scale in zip(visited, solution.x) if not isclose(scale, 0) and node in process_nodes])
+        return cls.from_nodes([node * scale for node, scale in zip(visited, solution.x) if not isclose(scale, 0) and node in process_nodes], name=name)
 
     @classmethod
     def optimize_power(self, target_output: float, available_nodes: Iterable[ProcessNode]) -> Self:

@@ -1,12 +1,12 @@
+import json
+from pathlib import Path
+from typing import Any, Iterable, Self
+
 from satisfactory_tools.categorized_collection import CategorizedCollection
-from satisfactory_tools.core.process import ProcessNode, Process
 from satisfactory_tools.core.material import MaterialSpec, MaterialSpecFactory
+from satisfactory_tools.core.process import Process, ProcessNode
 from satisfactory_tools.plotting import graph, tables
 from satisfactory_tools.ui.widgets import Picker, Setter
-from typing import Iterable, Protocol, Self, Any
-from pathlib import Path
-import json
-from abc import abstractmethod
 
 
 class DependencyException(Exception):
@@ -47,7 +47,7 @@ class OptimizationResult:
 class Optimizer:
     def __init__(self, materials: MaterialSpecFactory, available_processes: CategorizedCollection[str, ProcessNode]):
         self.include_power = False
-        self._include_input = False
+        self.include_input = False
 
         self._materials = materials
 
@@ -69,12 +69,9 @@ class Optimizer:
     def clear_output(self) -> None:
         self.output_setter.clear()
 
-    def set_input(self) -> None:
-        self.include_input = True
-
     def clear_input(self) -> None:
         self.input_setter.clear()
-        self._include_input = False
+        self.include_input = False
 
     def clear_processes(self) -> None:
         self.process_picker.clear()

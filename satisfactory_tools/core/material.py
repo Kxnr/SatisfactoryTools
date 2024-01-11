@@ -1,11 +1,9 @@
-from dataclasses import dataclass, fields
 from functools import singledispatchmethod
-from numbers import Number
-from typing import Any, Mapping
-from collections import defaultdict
-from pydantic import BaseModel, Field, RootModel
 from math import isclose
+from numbers import Number
+from typing import Any
 
+from pydantic import BaseModel, Field, RootModel
 from typing_extensions import Self
 
 

@@ -1,10 +1,10 @@
-from satisfactory_tools.categorized_collection import CategorizedCollection
-from thefuzz import process
-from nicegui import ui
-from collections import Counter
 from functools import partial
-
 from typing import Iterable
+
+from nicegui import ui
+from thefuzz import process
+
+from satisfactory_tools.categorized_collection import CategorizedCollection
 
 
 class Picker:

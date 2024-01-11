@@ -1,17 +1,22 @@
 import json
 import re
-from dataclasses import dataclass, make_dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
+
 from more_itertools import only
 
-from satisfactory_tools.categorized_collection import CategorizedCollection
 from satisfactory_tools.auto_mapping import AutoMapping
-from satisfactory_tools.config.machines import MachineData, parse_machines, Machines, GeneratorData, ExtractorData
-from satisfactory_tools.config.materials import parse_materials, MaterialMetadata, MaterialType
-from satisfactory_tools.config.recipes import RecipeData, parse_recipes
-from satisfactory_tools.config.standardization import standardize
+from satisfactory_tools.categorized_collection import CategorizedCollection
+from satisfactory_tools.config.machines import (
+    ExtractorData,
+    GeneratorData,
+    MachineData,
+    parse_machines,
+)
+from satisfactory_tools.config.materials import MaterialMetadata, parse_materials
+from satisfactory_tools.config.recipes import parse_recipes
 from satisfactory_tools.core.material import MaterialSpec, MaterialSpecFactory
-from satisfactory_tools.core.process import ProcessNode, Process
+from satisfactory_tools.core.process import ProcessNode
 
 CUSTOM_TAG = "custom"
 

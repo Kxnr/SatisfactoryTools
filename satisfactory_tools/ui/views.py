@@ -1,12 +1,14 @@
-from typing import Protocol, Callable, Self
 from abc import abstractmethod
-from satisfactory_tools.ui.models import Optimizer, OptimizationResult
-from satisfactory_tools.plotting.tables import Table
-from satisfactory_tools.ui.widgets import Setter, Picker 
-from nicegui.element import Element
-from nicegui import ui, run
 from contextlib import nullcontext
 from functools import partial
+from typing import Callable, Protocol, Self
+
+from nicegui import run, ui
+from nicegui.element import Element
+
+from satisfactory_tools.plotting.tables import Table
+from satisfactory_tools.ui.models import OptimizationResult, Optimizer
+from satisfactory_tools.ui.widgets import Picker, Setter
 
 
 class View(Protocol):
@@ -98,9 +100,8 @@ class OptimizerView(View):
             ex.classes("w-full")
             SetterView(self.model.input_setter).render()
             with ui.row():
+                ui.switch("Apply").bind_value(self.model.__dict__, "include_input")
                 ui.button("Clear", on_click=self.model.clear_input)
-                # TODO: re-set constraints if previously skipped
-                ui.button("Apply", on_click=self.model.set_input)
         with ui.expansion("Available Recipes") as ex:
             ex.classes("w-full")
             PickerView(self.model.process_picker).render()

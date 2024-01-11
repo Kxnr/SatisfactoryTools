@@ -1,13 +1,10 @@
-from nicegui import ui, run
-from satisfactory_tools.ui.models import Optimizer, OptimizationResult
-from satisfactory_tools.ui.views import OptimizerView
-from satisfactory_tools.categorized_collection import CategorizedCollection
-import random
-from functools import partial
-import string
 from pathlib import Path
 
+from nicegui import ui
+
 from satisfactory_tools.config.parser import ConfigParser
+from satisfactory_tools.ui.models import Optimizer
+from satisfactory_tools.ui.views import OptimizerView
 
 config = ConfigParser(Path("./Docs.json")).parse_config()
 

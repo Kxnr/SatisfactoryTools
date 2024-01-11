@@ -1,4 +1,3 @@
-import toml
 from pydantic import BaseModel
 
 CONFIG_PATH = "config.toml"

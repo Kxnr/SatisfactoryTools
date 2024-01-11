@@ -1,13 +1,9 @@
-import itertools
 import math
-from textwrap import dedent
-from more_itertools import bucket
 import pprint
 
-import plotly.graph_objects as go
 from networkx.drawing import spring_layout
 
-from satisfactory_tools.core.process import Process, ProcessNode
+from satisfactory_tools.core.process import Process
 
 
 def plot_process(process: Process, layout=spring_layout):
