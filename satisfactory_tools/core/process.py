@@ -180,8 +180,8 @@ class Process(ProcessNode):
                 # make a pool node for this resource, so that we don't connect every machine that
                 # has a byproduct to every other machine that uses that material
                 # FIXME: material spec ergonomics
-                input_count = sum((node.input_materials[material] for node in nodes))
-                output_count = sum((node.output_materials[material] for node in nodes))
+                input_count = sum((node.scaled_input[material] for node in nodes))
+                output_count = sum((node.scaled_output[material] for node in nodes))
                 input_materials = nodes[0].input_materials.empty({material: input_count})
                 output_materials = nodes[0].output_materials.empty({material: output_count})
                 name = f"{material} Pool"
