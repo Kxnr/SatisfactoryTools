@@ -10,27 +10,35 @@ class Table:
     row_headers: list[str] = field(default_factory=list)
     rows: list[list[str]] = field(default_factory=list)
 
+    def __repr__(self):
+        a = ", ".join(self.column_headers)
+        b = ", ".join(self.row_headers)
+        c = ""
+        for row in self.rows:
+            c += ", ".join(row)
+
+        return f"{a}\n{b}\n{c}"
+
 
 def production_summary(process: ProcessNode) -> Table:
 
-    total_production = sum((node.scaled_input for node in process.internal_nodes), process.scaled_input.empty())
-    total_consumption = sum((node.scaled_output for node in process.internal_nodes), process.scaled_output.empty())
     net_production = process.scaled_output - process.scaled_input
 
     headers = ["Material", "Total Production", "Total Consumption", "Net Production"]
     rows = []
-    for material in total_production.keys():
-        if material not in total_production and material not in total_consumption:
+    for material in process.scaled_input.keys():
+        if material not in process.scaled_input and material not in process.scaled_output:
             continue
         rows.append([
             material,
-            f"{total_production[material]:.2f}",
-            f"{total_consumption[material]:.2f}",
+            f"{process.scaled_output[material]:.2f}",
+            f"{process.scaled_input[material]:.2f}",
             f"{net_production[material]:.2f}",
         ])
 
-    return Table(column_headers=headers, rows=rows)
-
+    table = Table(column_headers=headers, rows=rows)
+    print(table)
+    return table
 
 
 def machines_summary(process: Process) -> Table:
