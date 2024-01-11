@@ -57,12 +57,21 @@ class OptimizationResultView(View):
 
     def render(self):
         with ui.expansion(self.model.process.name) as container:
-            container.classes("w-full")
             # ui.plotly(self.model.graph())
+            container.classes("w-full")
+            with ui.card():
+                ui.label(f"Total Machines: {len(self.model.process.internal_nodes)}")
+                ui.label(f"Total Power Production: {self.model.process.power_production}")
+                ui.label(f"Total Power Consumption: {self.model.process.power_consumption}")
             ui.echart(self.model.graph()).classes("aspect-video w-full h-full")
 
             self._render_table(self.model.material_table())
             self._render_table(self.model.machines_table())
+            for node in self.model.process.internal_nodes:
+                with ui.card():
+                    ui.label(f"{node.name}: {node.scale:.2f}")
+                    self._render_table(self.model.production_summary(node))
+
 
     @staticmethod
     def _render_table(table: Table) -> None:
