@@ -55,6 +55,8 @@ class Optimizer:
         self.input_setter: Setter = Setter(list(self._materials.keys()))
         self.process_picker: Picker = Picker(available_processes)
 
+        self.name = "Result"
+
         self.clear_output()
         self.clear_input()
         self.clear_processes()
@@ -93,13 +95,13 @@ class Optimizer:
         return self.process_picker.selected
 
     def optimize_input(self) -> OptimizationResult:
-        return OptimizationResult(Process.minimize_input(self.output_materials, list(self.processes), self.include_power))
+        return OptimizationResult(Process.minimize_input(self.output_materials, list(self.processes), self.include_power, self.name))
 
     def optimize_output(self) -> OptimizationResult:
         if not self.input_materials:
             raise DependencyException("Available input required.")
 
-        return OptimizationResult(Process.maximize_output(self.input_materials, self.output_materials, list(self.processes), self.include_power))
+        return OptimizationResult(Process.maximize_output(self.input_materials, self.output_materials, list(self.processes), self.include_power, self.name))
 
     def optimize_power(self) -> Process:
         raise NotImplementedError()

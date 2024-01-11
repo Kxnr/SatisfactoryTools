@@ -60,17 +60,17 @@ class OptimizationResultView(View):
             # ui.plotly(self.model.graph())
             container.classes("w-full")
             with ui.card():
-                ui.label(f"Total Machines: {len(self.model.process.internal_nodes)}")
-                ui.label(f"Total Power Production: {self.model.process.power_production}")
-                ui.label(f"Total Power Consumption: {self.model.process.power_consumption}")
+                ui.label(f"Total Machines: {sum((node.scale for node in self.model.process.internal_nodes)):.2f}")
+                ui.label(f"Total Power Production: {self.model.process.power_production: .2f}")
+                ui.label(f"Total Power Consumption: {self.model.process.power_consumption: .2f}")
             ui.echart(self.model.graph()).classes("aspect-video w-full h-full")
 
             self._render_table(self.model.material_table())
             self._render_table(self.model.machines_table())
-            for node in self.model.process.internal_nodes:
+            for name, table in self.model.per_machine_tables().items():
                 with ui.card():
-                    ui.label(f"{node.name}: {node.scale:.2f}")
-                    self._render_table(self.model.production_summary(node))
+                    ui.label(name)
+                    self._render_table(table)
 
 
     @staticmethod
@@ -105,8 +105,9 @@ class OptimizerView(View):
         with ui.expansion("Available Recipes") as ex:
             ex.classes("w-full")
             PickerView(self.model.process_picker).render()
-        ui.input("name")
-        with ui.row():
-            ui.button("Maximize output", on_click=partial(self.run_and_render, self.model.optimize_output, OptimizationResultView, self.output_element))
-            ui.button("Minimize input", on_click=partial(self.run_and_render, self.model.optimize_input, OptimizationResultView, self.output_element))
+        with ui.card():
+            ui.input("name").bind_value(self.model.__dict__, "name")
+            with ui.row():
+                ui.button("Maximize output", on_click=partial(self.run_and_render, self.model.optimize_output, OptimizationResultView, self.output_element))
+                ui.button("Minimize input", on_click=partial(self.run_and_render, self.model.optimize_input, OptimizationResultView, self.output_element))
 
