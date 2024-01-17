@@ -22,7 +22,7 @@ class View(Protocol):
 
     @abstractmethod
     def render(self):
-        # TODO: auto wrap in container
+        # TODO: auto wrap in container, use __init_subclass__ auto decorator?
         ...
 
     def clear(self):
@@ -31,6 +31,9 @@ class View(Protocol):
     def update(self):
         self.clear()
         self.render()
+
+    def delete(self):
+        self.container.delete()
 
 
 class PickerView(View):
@@ -113,7 +116,8 @@ class OptimizerView(View):
         async def optimize_and_render(callback: Callable[[], OptimizationResult]) -> None:
             result = await run.cpu_bound(callback)
 
-            # TODO: prevent duplicate names
+            # TODO: prompt on duplicate, delete existing process. We can await a button event
+            # TODO: in prompt
             self.model.process_picker.add(self.model.name, result, {"custom",})
             self.process_view.update()
 
