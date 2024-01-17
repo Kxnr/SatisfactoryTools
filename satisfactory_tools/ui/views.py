@@ -18,9 +18,19 @@ def get_trailing_digits(value: str) -> str | None:
 
 
 class View(Protocol):
+    container: ui.element
+
     @abstractmethod
     def render(self):
+        # TODO: auto wrap in container
         ...
+
+    def clear(self):
+        self.container.clear()
+
+    def update(self):
+        self.clear()
+        self.render()
 
 
 class PickerView(View):
@@ -55,6 +65,7 @@ class OptimizationResultView(View):
 
     def render(self):
         with ui.expansion(self.model.process.name) as container:
+            container.classes("w-full")
             # TODO: on_click with overwrite handling, name input, real placement for button
             ui.button("save")
 
