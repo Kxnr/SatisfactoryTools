@@ -27,4 +27,4 @@ with planning_column:
     optimizer_view = OptimizerView(optimizer, result_column)
     optimizer_view.render()
 
-ui.run(reload=False, native=True)
+ui.run(reload=False)
