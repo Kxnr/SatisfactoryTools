@@ -2,6 +2,7 @@ from abc import abstractmethod
 from contextlib import nullcontext
 from functools import partial
 from typing import Callable, Protocol, Self
+import re
 
 from nicegui import run, ui
 from nicegui.element import Element
@@ -11,19 +12,15 @@ from satisfactory_tools.ui.models import OptimizationResult, Optimizer
 from satisfactory_tools.ui.widgets import Picker, Setter
 
 
+def get_trailing_digits(value: str) -> str | None:
+    m = re.search(r"\d+$", value)
+    return m and m.group()
+
+
 class View(Protocol):
     @abstractmethod
     def render(self):
         ...
-
-    # TODO: update and reset methods?
-
-    async def run_and_render(self, callback: Callable[[], ...], result_view: Self, render_context: Element | None = None):
-        # FIXME: better way to run sub processes and deal with result
-        result = await run.cpu_bound(callback)
-
-        with (render_context or nullcontext()):
-            result_view(result).render()
 
 
 class PickerView(View):
@@ -58,41 +55,58 @@ class OptimizationResultView(View):
 
     def render(self):
         with ui.expansion(self.model.process.name) as container:
-            # ui.plotly(self.model.graph())
-            container.classes("w-full")
-            with ui.card():
-                ui.label(f"Total Machines: {sum((node.scale for node in self.model.process.internal_nodes)):.2f}")
-                ui.label(f"Total Power Production: {self.model.process.power_production: .2f}")
-                ui.label(f"Total Power Consumption: {self.model.process.power_consumption: .2f}")
+            # TODO: on_click with overwrite handling, name input, real placement for button
+            ui.button("save")
+
             ui.echart(self.model.graph()).classes("aspect-video w-full h-full")
 
-            self._render_table(self.model.material_table())
-            self._render_table(self.model.machines_table())
-            for name, table in self.model.per_machine_tables().items():
-                with ui.card():
-                    ui.label(name)
-                    self._render_table(table)
+            self._render_table(Table(
+                column_headers=["Total Machines", "Total Power Production", "Total Power Consumption"],
+                rows=[[f"{sum((node.scale for node in self.model.process.internal_nodes)):.2f}",
+                      f"{self.model.process.power_production: .2f}",
+                      f"{self.model.process.power_consumption: .2f}"]]
+            )).classes("w-full")
+            self._render_table(self.model.material_table()).classes("w-full")
+            self._render_table(self.model.machines_table()).classes("w-full")
+            with ui.row().classes("w-full"):
+                for name, table in self.model.per_machine_tables().items():
+                    with ui.card():
+                        ui.label(name)
+                        self._render_table(table)
 
 
     @staticmethod
-    def _render_table(table: Table) -> None:
+    def _render_table(table: Table):
             columns = [{"name": label, "label": label, "field": label, "required": True} for label in table.column_headers]
             rows = [
                 {k: v for k, v in zip(table.column_headers, row)}
                 for row in table.rows
             ]
 
-            ui.table(columns=columns, rows=rows)
+            return ui.table(columns=columns, rows=rows)
 
 
 
 class OptimizerView(View):
+    # TODO: load
     def __init__(self, model: Optimizer, output_element: Element):
         self.model = model
         self.output_element = output_element
 
     def render(self):
-        # TODO: set name
+        async def optimize_and_render(callback: Callable[[], OptimizationResult]) -> None:
+            result = await run.cpu_bound(callback)
+
+            trailing_digits = get_trailing_digits(self.model.name)
+
+            if trailing_digits:
+                self.model.name = f"{self.model.name[:-len(trailing_digits)]}{int(trailing_digits) + 1}"
+            else:
+                self.model.name += " 1"
+
+            with self.output_element:
+                OptimizationResultView(result).render()
+
         with ui.expansion("Target Output") as ex:
             ex.classes("w-full")
             SetterView(self.model.output_setter).render()
@@ -108,6 +122,9 @@ class OptimizerView(View):
         with ui.card():
             ui.input("name").bind_value(self.model.__dict__, "name")
             with ui.row():
-                ui.button("Maximize output", on_click=partial(self.run_and_render, self.model.optimize_output, OptimizationResultView, self.output_element))
-                ui.button("Minimize input", on_click=partial(self.run_and_render, self.model.optimize_input, OptimizationResultView, self.output_element))
+                # TODO: disable button while optimizing--optimization is generally fast enough that
+                # TODO: this isn't all that important
+                ui.button("Maximize output", on_click=partial(optimize_and_render, self.model.optimize_output))
+                ui.button("Minimize input", on_click=partial(optimize_and_render, self.model.optimize_input))
+
 

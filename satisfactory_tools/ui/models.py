@@ -25,7 +25,7 @@ class OptimizationResult:
     @classmethod
     def load(cls, path: Path) -> Self:
         with path.open() as f:
-            return Process(**json.load(f))
+            return cls(Process(**json.load(f)))
 
     def graph(self) -> dict[str, Any]:
         return graph.plot_process(self.process)

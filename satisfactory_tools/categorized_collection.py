@@ -61,6 +61,9 @@ class CategorizedCollection(Generic[K, V]):
     def __contains__(self, key: K) -> bool:
         return key in self._values
 
+    def __len__(self) -> int:
+        return len(self._values)
+
     @property
     def tags(self) -> dict[str, set[K]]:
         return self._tags

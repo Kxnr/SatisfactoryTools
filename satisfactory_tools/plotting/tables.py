@@ -36,7 +36,6 @@ def production_summary(process: ProcessNode) -> Table:
         ])
 
     table = Table(column_headers=headers, rows=rows)
-    print(table)
     return table
 
 

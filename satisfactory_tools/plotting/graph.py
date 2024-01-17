@@ -1,5 +1,4 @@
 import math
-import pprint
 
 from networkx.drawing import spring_layout
 
@@ -73,5 +72,4 @@ def plot_process(process: Process, layout=spring_layout):
             }
         ]
     }
-    pprint.pprint(config)
     return config

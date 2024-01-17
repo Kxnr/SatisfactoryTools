@@ -24,11 +24,11 @@ class Picker:
         pass
 
     def render_category_selectors(self, ui: ui) -> None:
-        # TODO: fix sizing to labels, switch to progress button?
-        # TODO: color change on full
         for tag in self.elements.tags.keys():
-            with ui.circular_progress(max=len(list(self.elements.tag(tag).values())), show_value=False).bind_value_from(self._category_counters, tag).bind_visibility_from(self._category_visibility, tag):
-                ui.button(tag, on_click=partial(self._category_select, tag)).props("flat round").bind_visibility_from(self._category_visibility, tag)
+            with ui.button(on_click=partial(self._category_select, tag)).classes("content-baseline items-baseline") as button:
+                button.bind_visibility_from(self._category_visibility, tag)
+                ui.circular_progress(color="accent", show_value=False, size="sm", min=0, max=len(self.elements.tag(tag))).bind_value_from(self._category_counters, tag)
+                ui.label(tag)
 
     def render_search_box(self, ui: ui) -> None:
         searchbox = ui.input(placeholder="Search...", on_change=lambda e: self._filter(e.value))
@@ -108,13 +108,11 @@ class Setter:
             for key in self._selected.keys():
                 self._selected[key] = key in keys
 
-        # TODO: can the dropdown be formatted with headers or sub menus?
         searchbox = ui.select(self.elements, with_input=True, multiple=True, on_change=lambda e: _set_keys(e.value)).props("use-chips")
 
     def render_setters(self, ui):
         for key in self.elements:
             with ui.row() as row:
-                # TODO: column wrap
                 row.classes("content-center")
                 row.props("content-center")
 

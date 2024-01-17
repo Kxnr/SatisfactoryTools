@@ -139,13 +139,13 @@ class Process(ProcessNode):
     _graph: nx.MultiGraph
 
     @classmethod
-    def from_nodes(cls, nodes_or_graph: Iterable[ProcessNode] | nx.MultiDiGraph) -> Self:
+    def from_nodes(cls, nodes_or_graph: Iterable[ProcessNode] | nx.MultiDiGraph, name: str="Composite") -> Self:
         if isinstance(nodes_or_graph, nx.MultiDiGraph):
             _graph = nodes_or_graph
         else:
             _graph = cls._make_graph(nodes_or_graph)
 
-        obj = super().from_nodes(*_graph.nodes)
+        obj = super().from_nodes(*_graph.nodes, name=name)
         obj._graph = _graph
         return obj
 
@@ -182,9 +182,9 @@ class Process(ProcessNode):
                 output_count = sum((node.scaled_output[material] for node in nodes))
                 input_materials = nodes[0].input_materials.empty({material: input_count})
                 output_materials = nodes[0].output_materials.empty({material: output_count})
-                name = f"{material} Pool"
+                name = f"{material} Node"
 
-                pool_node = ProcessNode(name=name, input_materials=input_materials, output_materials=output_materials, power_production=0, power_consumption=0, machine=ConfigDict(display_name=name, class_name=""))
+                pool_node = ProcessNode(name=name, input_materials=input_materials, output_materials=output_materials, power_production=0, power_consumption=0, machine=ConfigDict(display_name="Resource Pool", class_name=""))
                 for node in nodes:
                     join_nodes(node, pool_node, material)
             else:
