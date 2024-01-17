@@ -77,7 +77,7 @@ class Picker:
         threshold = 75
 
         item_scores = process.extract(search, self.elements.keys(), limit=None)
-        tag_scores = process.extract(search, self.elements.tags.keys(), limit=None)
+        ta ntg_scores = process.extract(search, self.elements.tags.keys(), limit=None)
         visible_categories = {k for k, score in tag_scores if score > threshold}
         for k, score in item_scores:
             self._selector_visibility[k] = (score > threshold) or any(visible_categories & self.elements.value_tags(k))
@@ -88,6 +88,18 @@ class Picker:
     @property
     def selected(self) -> set[...]:
         yield from (self.elements[key] for key, value in self._selected.items() if value)
+
+    def add(self, key: str, value: ..., tags: set[str], selected: bool | None = None):
+        self.elements[key] = value
+        self.elements.set_tags(key, tags)
+        self._selected[key] = selected if selected is not None else self.default_state
+        self._selector_visibility[key] = self.default_visibility 
+
+        for tag in tags:
+            self._category_visibility.set_default(tag, self.default_visibility)
+            self._category_counters.set_default(tag, 0)
+
+        self._update_category_selectors(key)
 
 
 class Setter:

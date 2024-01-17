@@ -18,7 +18,7 @@ def get_trailing_digits(value: str) -> str | None:
 
 
 class View(Protocol):
-    container: ui.element
+    container = ui.element
 
     @abstractmethod
     def render(self):
@@ -79,6 +79,8 @@ class OptimizationResultView(View):
             )).classes("w-full")
             self._render_table(self.model.material_table()).classes("w-full")
             self._render_table(self.model.machines_table()).classes("w-full")
+
+            # TODO: layout for per-machine tables
             with ui.row().classes("w-full"):
                 for name, table in self.model.per_machine_tables().items():
                     with ui.card():
@@ -103,10 +105,17 @@ class OptimizerView(View):
     def __init__(self, model: Optimizer, output_element: Element):
         self.model = model
         self.output_element = output_element
+        self.output_view = SetterView(self.model.output_setter)
+        self.input_view = SetterView(self.model.input_setter)
+        self.process_view = PickerView(self.model.process_picker)
 
     def render(self):
         async def optimize_and_render(callback: Callable[[], OptimizationResult]) -> None:
             result = await run.cpu_bound(callback)
+
+            # TODO: prevent duplicate names
+            self.model.process_picker.add(self.model.name, result, {"custom",})
+            self.process_view.update()
 
             trailing_digits = get_trailing_digits(self.model.name)
 
@@ -120,16 +129,16 @@ class OptimizerView(View):
 
         with ui.expansion("Target Output") as ex:
             ex.classes("w-full")
-            SetterView(self.model.output_setter).render()
+            self.output_view.render()
         with ui.expansion("Input Constraints") as ex:
             ex.classes("w-full")
-            SetterView(self.model.input_setter).render()
+            self.input_view.render()
             with ui.row():
                 ui.switch("Apply").bind_value(self.model.__dict__, "include_input")
                 ui.button("Clear", on_click=self.model.clear_input)
         with ui.expansion("Available Recipes") as ex:
             ex.classes("w-full")
-            PickerView(self.model.process_picker).render()
+            self.process_view.render()
         with ui.card():
             ui.input("name").bind_value(self.model.__dict__, "name")
             with ui.row():
