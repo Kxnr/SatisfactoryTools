@@ -16,7 +16,8 @@ dependencies = [
   "toml",
   "thefuzz",
   "nicegui",
-  "more_itertools"
+  "more_itertools",
+  "pywebview[qt]"
 ]
 
 [tool.mypy]
