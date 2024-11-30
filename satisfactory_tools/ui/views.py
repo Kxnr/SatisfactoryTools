@@ -26,7 +26,8 @@ class View(Protocol):
         ...
 
     def clear(self):
-        self.container.clear()
+        ...
+        # self.container.clear()
 
     def update(self):
         self.clear()
@@ -43,12 +44,10 @@ class PickerView(View):
     def render(self):
         self.model.render_search_box(ui)
 
-        with ui.row(wrap=True) as row:
-            row.classes("max-h-80 max-w-96 overflow-scroll")
+        with ui.scroll_area().classes("max-h-80 max-w-96"):
             self.model.render_category_selectors(ui)
 
-        with ui.row(wrap=True) as row:
-            row.classes("max-h-80 max-w-96 overflow-scroll")
+        with ui.scroll_area().classes("max-h-80 max-w-96"):
             self.model.render_selectors(ui)
 
 
@@ -62,6 +61,7 @@ class SetterView(View):
 
         self.model.render_search_box(ui)
 
+
 class OptimizationResultView(View):
     def __init__(self, model: OptimizationResult):
         self.model = model
@@ -74,12 +74,22 @@ class OptimizationResultView(View):
 
             ui.echart(self.model.graph()).classes("aspect-video w-full h-full")
 
-            self._render_table(Table(
-                column_headers=["Total Machines", "Total Power Production", "Total Power Consumption"],
-                rows=[[f"{sum((node.scale for node in self.model.process.internal_nodes)):.2f}",
-                      f"{self.model.process.power_production: .2f}",
-                      f"{self.model.process.power_consumption: .2f}"]]
-            )).classes("w-full")
+            self._render_table(
+                Table(
+                    column_headers=[
+                        "Total Machines",
+                        "Total Power Production",
+                        "Total Power Consumption",
+                    ],
+                    rows=[
+                        [
+                            f"{sum((node.scale for node in self.model.process.internal_nodes)):.2f}",
+                            f"{self.model.process.power_production: .2f}",
+                            f"{self.model.process.power_consumption: .2f}",
+                        ]
+                    ],
+                )
+            ).classes("w-full")
             self._render_table(self.model.material_table()).classes("w-full")
             self._render_table(self.model.machines_table()).classes("w-full")
 
@@ -90,17 +100,15 @@ class OptimizationResultView(View):
                         ui.label(name)
                         self._render_table(table)
 
-
     @staticmethod
     def _render_table(table: Table):
-            columns = [{"name": label, "label": label, "field": label, "required": True} for label in table.column_headers]
-            rows = [
-                {k: v for k, v in zip(table.column_headers, row)}
-                for row in table.rows
-            ]
+        columns = [
+            {"name": label, "label": label, "field": label, "required": True}
+            for label in table.column_headers
+        ]
+        rows = [{k: v for k, v in zip(table.column_headers, row)} for row in table.rows]
 
-            return ui.table(columns=columns, rows=rows)
-
+        return ui.table(columns=columns, rows=rows)
 
 
 class OptimizerView(View):
@@ -118,13 +126,22 @@ class OptimizerView(View):
 
             # TODO: prompt on duplicate, delete existing process. We can await a button event
             # TODO: in prompt
-            self.model.process_picker.add(self.model.name, result, {"custom",})
+            self.model.process_picker.add(
+                self.model.name,
+                result,
+                {
+                    "custom",
+                },
+            )
+            # FIXME: this is re-drawing outside of context?
             self.process_view.update()
 
             trailing_digits = get_trailing_digits(self.model.name)
 
             if trailing_digits:
-                self.model.name = f"{self.model.name[:-len(trailing_digits)]}{int(trailing_digits) + 1}"
+                self.model.name = (
+                    f"{self.model.name[:-len(trailing_digits)]}{int(trailing_digits) + 1}"
+                )
             else:
                 self.model.name += " 1"
 
@@ -143,12 +160,16 @@ class OptimizerView(View):
         with ui.expansion("Available Recipes") as ex:
             ex.classes("w-full")
             self.process_view.render()
-        with ui.card():
-            ui.input("name").bind_value(self.model.__dict__, "name")
-            with ui.row():
-                # TODO: disable button while optimizing--optimization is generally fast enough that
-                # TODO: this isn't all that important
-                ui.button("Maximize output", on_click=partial(optimize_and_render, self.model.optimize_output))
-                ui.button("Minimize input", on_click=partial(optimize_and_render, self.model.optimize_input))
 
-
+        ui.input("name").bind_value(self.model.__dict__, "name")
+        with ui.row():
+            # TODO: disable button while optimizing--optimization is generally fast enough that
+            # TODO: this isn't all that important
+            ui.button(
+                "Maximize output",
+                on_click=partial(optimize_and_render, self.model.optimize_output),
+            )
+            ui.button(
+                "Minimize input",
+                on_click=partial(optimize_and_render, self.model.optimize_input),
+            )

@@ -1,5 +1,7 @@
-from pathlib import Path
+import multiprocessing
+multiprocessing.set_start_method("spawn", force=True)
 
+from pathlib import Path
 from nicegui import ui
 
 from satisfactory_tools.config.parser import ConfigParser
@@ -27,4 +29,4 @@ with planning_column:
     optimizer_view = OptimizerView(optimizer, result_column)
     optimizer_view.render()
 
-ui.run(reload=False)
+ui.run(reload=True)
